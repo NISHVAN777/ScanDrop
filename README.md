@@ -55,13 +55,15 @@ Two ways to send:
 - Random 12-character IDs, cleaned file names, slow-hashed PINs, signed short-lived download tokens
 
 **While you wait: Catch the drop**
-- A small game at the bottom of the home page. Move your phone to catch falling files (+1), grab the rare yellow QR tile (+5), and dodge broken files
-- It speeds up as you score. Your best score is remembered on your device
+- A neon mini game at the bottom of the home page. Move your phone to catch falling files (+1), grab the rare gold QR tile (+5), and dodge red broken files
+- Catch 5 in a row for x2 points, 10 in a row for x3. It speeds up as you score, and your best score is remembered on your device
 - Mouse, finger or ← → keys. Space pauses. It pauses by itself when you scroll away or switch tabs
 
 **Design**
-- Bricolage Grotesque headings with Atkinson Hyperlegible body text, both served from the project (no outside font requests)
-- Light and dark themes, phone-first layout, visible keyboard focus. The QR "prints" in with a scan line, skipped when reduced motion is on
+- Dark, premium look: animated aurora background, frosted-glass cards with a glowing rim that follows the mouse, gradient headline and buttons with a shine sweep
+- Confetti and a glowing pulse when your QR code is ready; the code "prints" in behind a scan line
+- Bricolage Grotesque headings and Atkinson Hyperlegible body text, served from the project (no outside font requests)
+- Phone-first layout, visible keyboard focus, and all decorative motion turns off when reduced motion is on
 
 ## Getting started
 
