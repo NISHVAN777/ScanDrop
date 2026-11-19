@@ -39,8 +39,11 @@ fetch('/api/config')
   .then((r) => r.json())
   .then((cfg) => {
     maxFileSize = cfg.maxFileSize;
+    const size = formatBytes(maxFileSize).replace('.0 ', ' '); // "1.0 GB" -> "1 GB"
     $('limitText').textContent =
-      `The file waits safely on the server, so they can download it later. Up to ${formatBytes(maxFileSize)}.`;
+      `The file waits safely on the server, so they can download it later. Up to ${size}.`;
+    // Every other place on the page that mentions the upload limit
+    document.querySelectorAll('.js-max-size').forEach((el) => { el.textContent = size; });
   })
   .catch(() => {});
 
