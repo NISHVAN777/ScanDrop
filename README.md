@@ -97,6 +97,27 @@ end-to-end encryption (ciphertext only on the server, tamper and reorder detecti
 phone-fallback compatibility), expiry cleanup, restart persistence, storage cap,
 rate limits, path tricks, security headers, and P2P signaling.
 
+## Deploying to Fly.io
+
+ScanDrop deploys automatically with GitHub Actions on every push to `main`: tests run first, then the app is deployed to [Fly.io](https://fly.io) (Mumbai region) at `https://scandrop-nishvan.fly.dev`.
+
+One-time setup:
+
+1. Create a Fly.io account at https://fly.io and add a payment card (needed even for small apps).
+2. In the Fly.io dashboard, open **Tokens** and create a token. An **org deploy token** for your personal organization works.
+3. In this GitHub repo, open **Settings > Secrets and variables > Actions**, add a new repository secret named `FLY_API_TOKEN`, and paste the token.
+4. Push to `main` (or run the workflow from the **Actions** tab). The first run creates the app and a 3 GB storage volume, then deploys.
+
+Files in the repo:
+
+| File | What it does |
+|---|---|
+| `Dockerfile`, `docker-entrypoint.sh` | Production image (Node 22, runs as a non-root user) |
+| `fly.toml` | Fly.io settings: Mumbai region, HTTPS, health check, one always-on machine, volume at `/data` |
+| `.github/workflows/fly-deploy.yml` | Runs the tests, creates the app and volume on first run, then deploys |
+
+On Fly.io, QR links automatically use `https://<app>.fly.dev`. Set `PUBLIC_URL` if you add a custom domain. Keep the app on **one machine**: uploads in progress and direct-transfer rooms live in that machine's memory and volume.
+
 ## Configuration
 
 Set these as environment variables:

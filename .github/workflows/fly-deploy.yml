@@ -1,0 +1,63 @@
+name: Test and deploy to Fly.io
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+# Never run two deploys at once
+concurrency:
+  group: fly-deploy
+  cancel-in-progress: false
+
+jobs:
+  test:
+    name: Run tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+
+  deploy:
+    name: Deploy
+    needs: test
+    runs-on: ubuntu-latest
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check that the Fly.io token is set
+        run: |
+          if [ -z "$FLY_API_TOKEN" ]; then
+            echo "::error::Add a repository secret named FLY_API_TOKEN (Settings > Secrets and variables > Actions)."
+            exit 1
+          fi
+
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Read app name from fly.toml
+        run: echo "APP=$(grep -E '^app *=' fly.toml | cut -d'"' -f2)" >> "$GITHUB_ENV"
+
+      - name: Create the app (first deploy only)
+        run: |
+          if ! flyctl status --app "$APP" > /dev/null 2>&1; then
+            flyctl apps create "$APP" --org personal
+          fi
+
+      - name: Create the storage volume (first deploy only)
+        run: |
+          if ! flyctl volumes list --app "$APP" --json | grep -q '"scandrop_data"'; then
+            flyctl volumes create scandrop_data --app "$APP" --region bom --size 3 --yes
+          fi
+
+      - name: Deploy
+        run: flyctl deploy --remote-only --ha=false
+
+      - name: Show the live address
+        run: echo "ScanDrop is live at https://$APP.fly.dev" >> "$GITHUB_STEP_SUMMARY"

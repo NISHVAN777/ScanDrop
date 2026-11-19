@@ -72,6 +72,16 @@ app.use((req, res, next) => {
 
 // ---------- API ----------
 
+// Health check for the hosting platform: is the server up and can it use its storage?
+app.get('/healthz', (req, res) => {
+  try {
+    fs.accessSync(UPLOAD_DIR, fs.constants.W_OK);
+    res.json({ ok: true, files: files.all().length, uptime: Math.round(process.uptime()) });
+  } catch {
+    res.status(503).json({ ok: false, error: 'Storage is not writable.' });
+  }
+});
+
 app.get('/api/config', (req, res) => {
   res.json({
     maxFileSize: MAX_FILE_SIZE,
@@ -139,7 +149,9 @@ setInterval(cleanup, CLEANUP_INTERVAL_MS).unref();
 const server = app.listen(PORT, HOST, () => {
   console.log(`\n  ScanDrop is running`);
   console.log(`  On this computer:   http://localhost:${PORT}`);
-  console.log(`  QR links point to:  ${getPublicBaseUrl()}  (phones must be on the same Wi-Fi)\n`);
+  const base = getPublicBaseUrl();
+  const note = base.startsWith('https://') ? '' : '  (phones must be on the same Wi-Fi)';
+  console.log(`  QR links point to:  ${base}${note}\n`);
 });
 // Big downloads on slow connections can take a long time.
 server.requestTimeout = 0;

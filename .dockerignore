@@ -1,0 +1,11 @@
+node_modules
+storage
+preview
+tests
+.git
+.github
+*.log
+.env
+Dockerfile
+fly.toml
+README.md

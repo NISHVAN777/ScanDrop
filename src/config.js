@@ -37,9 +37,14 @@ export const ICE_SERVERS = (process.env.STUN_URLS ?? 'stun:stun.l.google.com:193
   .split(',').map((s) => s.trim()).filter(Boolean).map((urls) => ({ urls }));
 export const P2P_ROOM_TTL = 12 * 60 * 60 * 1000;
 
+// Running on Fly.io? (Fly sets FLY_APP_NAME on every machine.)
+export const ON_FLY = Boolean(process.env.FLY_APP_NAME);
+
 // Set TRUST_PROXY=1 when running behind a reverse proxy (Nginx, Render, etc.)
-// so rate limits see the real client IP.
-export const TRUST_PROXY = process.env.TRUST_PROXY ? Number(process.env.TRUST_PROXY) || 1 : false;
+// so rate limits see the real client IP. Fly.io always has one proxy in front.
+export const TRUST_PROXY = process.env.TRUST_PROXY
+  ? Number(process.env.TRUST_PROXY) || 1
+  : ON_FLY ? 1 : false;
 
 // How long a file can live, chosen by the sender.
 export const EXPIRY_OPTIONS = {
@@ -58,10 +63,12 @@ export const CLEANUP_INTERVAL_MS = 60 * 1000;
 
 /**
  * The address put inside the QR code. "localhost" would not work from a phone,
- * so by default we use this computer's Wi-Fi/LAN IP. Set PUBLIC_URL when deployed.
+ * so locally we use this computer's Wi-Fi/LAN IP. When deployed, set PUBLIC_URL
+ * (e.g. a custom domain); on Fly.io it defaults to https://<app>.fly.dev.
  */
 export function getPublicBaseUrl() {
   if (process.env.PUBLIC_URL) return process.env.PUBLIC_URL.replace(/\/+$/, '');
+  if (ON_FLY) return `https://${process.env.FLY_APP_NAME}.fly.dev`;
   return `http://${getLanIp()}:${PORT}`;
 }
 
