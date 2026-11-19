@@ -12,6 +12,16 @@ import { verifyPin, hashToken, safeEqual } from '../security.js';
  *   GET    /api/files/:id/download   the file (?t=<token> if PIN-protected)
  *   DELETE /api/files/:id            owner only (X-Owner-Token header)
  */
+/** Does this request (optionally a Range request) include the file's last byte? */
+function includesLastByte(range, size) {
+  if (!range) return true;
+  const m = /^bytes=(\d*)-(\d*)$/.exec(range.trim());
+  if (!m) return true; // unusual/multi-range: treat as a full download
+  const [, start, end] = m;
+  if (start === '') return Number(end) > 0; // "bytes=-500" = the last 500 bytes
+  return end === '' || Number(end) >= size - 1;
+}
+
 export function fileRoutes({ files, limits, tokens, publicInfo, shareUrl, deleteFile, activeDownloads }) {
   const r = express.Router();
 
@@ -103,22 +113,38 @@ export function fileRoutes({ files, limits, tokens, publicInfo, shareUrl, delete
       return res.status(401).json({ error: 'This file is PIN-protected. Enter the PIN on the download page.' });
     }
 
-    // Resumed downloads send a Range header (e.g. "bytes=5000-"). Only the
-    // request that starts from the beginning counts as a new download.
-    const range = req.headers.range;
-    if (!range || /^bytes=0-/.test(range)) {
-      files.update(record.id, { downloads: record.downloads + 1 });
+    // A download counts only when it actually finishes. A transfer that breaks
+    // halfway (bad Wi-Fi, phone locked, tab closed) doesn't use up the limit,
+    // so a one-time link can be retried or resumed.
+    //
+    // "Finishes" = the request that delivers the last byte completes. That's
+    // a normal full download, or the final part of a resumed (Range) one.
+    const finishing = includesLastByte(req.headers.range, record.size);
+
+    // While a finishing transfer is running it holds one of the allowed slots,
+    // so two people can't both grab a one-time file at the same moment.
+    const active = activeDownloads.get(record.id) || { total: 0, finishing: 0 };
+    if (finishing && record.maxDownloads > 0 && record.downloads + active.finishing >= record.maxDownloads) {
+      return res.status(409).json({
+        error: 'Someone is downloading this file right now. Try again in a moment.',
+        reason: 'in_progress',
+      });
     }
+    active.total += 1;
+    if (finishing) active.finishing += 1;
+    activeDownloads.set(record.id, active);
 
-    activeDownloads.set(record.id, (activeDownloads.get(record.id) || 0) + 1);
     res.download(record.diskPath, record.name, { dotfiles: 'allow' }, (err) => {
-      const left = (activeDownloads.get(record.id) || 1) - 1;
-      if (left > 0) activeDownloads.set(record.id, left);
-      else activeDownloads.delete(record.id);
+      active.total -= 1;
+      if (finishing) active.finishing -= 1;
+      if (active.total <= 0) activeDownloads.delete(record.id);
 
+      const current = files.get(record.id);
+      if (!err && finishing && current) files.update(record.id, { downloads: current.downloads + 1 });
       if (err && !res.headersSent) res.status(500).json({ error: 'Download failed.' });
-      // Limit reached: delete as soon as the last transfer finishes.
-      if (left <= 0 && unavailableReason(files.get(record.id))) deleteFile(record.id);
+
+      // Limit reached: delete as soon as no transfer is still running.
+      if (active.total <= 0 && unavailableReason(files.get(record.id))) deleteFile(record.id);
     });
   });
 

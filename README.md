@@ -73,6 +73,19 @@ For development with auto-restart:
 npm run dev
 ```
 
+## Tests
+
+```bash
+npm test
+```
+
+Runs 44 automated tests against real server instances (each with its own temporary storage):
+uploads and chunk resume, parallel 25 MB uploads, non-English file names, download limits
+(including interrupted and resumed one-time downloads), PIN lockout and token checks,
+end-to-end encryption (ciphertext only on the server, tamper and reorder detection,
+phone-fallback compatibility), expiry cleanup, restart persistence, storage cap,
+rate limits, path tricks, security headers, and P2P signaling.
+
 ## Configuration
 
 Set these as environment variables:

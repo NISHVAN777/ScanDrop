@@ -189,7 +189,8 @@ async function decryptAndSave(id, info, btn) {
     await sink.close();
     btn.textContent = sink.streaming ? 'Saved ✓' : 'Downloaded ✓';
     $('dlStats').textContent = '';
-    recheck(id, btn, true);
+    // The server counts the download once its side finishes, a moment later.
+    setTimeout(() => recheck(id, btn, true), 800);
   } catch (err) {
     sink.abort();
     $('dlError').textContent = err.message || 'Download failed.';
