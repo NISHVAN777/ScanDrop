@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Download — ScanDrop</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <a class="brand" href="/">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M17.5 14v7M14 17.5l3.5 3.5 3.5-3.5"/>
+      </svg>
+      ScanDrop
+    </a>
+    <p class="tagline">Someone shared a file with you.</p>
+  </header>
+
+  <main>
+    <section id="loading" class="card center">
+      <p class="muted">Loading…</p>
+    </section>
+
+    <section id="ready" class="card center hidden">
+      <svg class="big-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 11v6M9 14l3 3 3-3"/>
+      </svg>
+      <h1 id="fileName" style="overflow-wrap:anywhere"></h1>
+      <p class="muted" id="fileSize"></p>
+
+      <a id="downloadBtn" class="btn btn-primary btn-block" href="#">Download</a>
+
+      <dl class="facts" style="text-align:left">
+        <dt>Expires</dt><dd id="fileExpiry"></dd>
+        <dt>Downloads</dt><dd id="fileDownloads"></dd>
+      </dl>
+      <p id="singleUse" class="alert hidden" style="text-align:left">
+        This is a one-time link. After you download it, the file is deleted.
+      </p>
+    </section>
+
+    <section id="gone" class="card center hidden">
+      <svg class="big-icon bad" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/>
+      </svg>
+      <h1>File not available</h1>
+      <p class="muted" id="goneReason">This link is invalid or has expired.</p>
+      <a class="btn btn-ghost btn-block" href="/">Send your own file</a>
+    </section>
+  </main>
+
+  <footer>ScanDrop · files are deleted automatically</footer>
+
+  <script type="module" src="/js/download.js"></script>
+</body>
+</html>

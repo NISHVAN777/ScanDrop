@@ -1,0 +1,29 @@
+{
+  "name": "scandrop",
+  "version": "1.0.0",
+  "description": "ScanDrop - share files with a single scan. Upload a file, get a QR code, scan it to download.",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NISHVAN777/ScanDrop.git"
+  },
+  "keywords": ["file-sharing", "qr-code", "transfer"],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/NISHVAN777/ScanDrop/issues"
+  },
+  "homepage": "https://github.com/NISHVAN777/ScanDrop#readme",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "busboy": "^1.6.0",
+    "express": "^4.22.3",
+    "qrcode": "^1.5.4"
+  }
+}
