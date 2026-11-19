@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Receive — ScanDrop</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <a class="brand" href="/">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M17.5 14v7M14 17.5l3.5 3.5 3.5-3.5"/>
+      </svg>
+      ScanDrop
+    </a>
+    <p class="tagline">Someone is sending you a file directly.</p>
+  </header>
+
+  <main>
+    <section id="connecting" class="card center">
+      <p class="muted" id="status">Connecting to the sender…</p>
+    </section>
+
+    <section id="offer" class="card center hidden">
+      <svg class="big-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 11v6M9 14l3 3 3-3"/>
+      </svg>
+      <h1 id="fileName" style="overflow-wrap:anywhere"></h1>
+      <p class="muted" id="fileSize"></p>
+      <p class="badge">⚡ Direct from the sender's device. Nothing is stored online.</p>
+
+      <button id="acceptBtn" class="btn btn-primary btn-block" type="button">Download</button>
+      <div id="progressBox" class="hidden">
+        <div class="progress"><div id="bar"></div></div>
+        <div class="progress-stats"><span id="percent"></span><span id="stats"></span></div>
+      </div>
+      <p class="muted small" id="keepOpen" style="margin-top:12px">Keep this page open until it finishes.</p>
+    </section>
+
+    <section id="failed" class="card center hidden">
+      <svg class="big-icon bad" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/>
+      </svg>
+      <h1>Transfer not available</h1>
+      <p class="muted" id="failReason"></p>
+      <button class="btn btn-ghost btn-block" type="button" onclick="location.reload()">Try again</button>
+    </section>
+  </main>
+
+  <footer>ScanDrop · direct transfer</footer>
+
+  <script type="module" src="/js/receive.js"></script>
+</body>
+</html>

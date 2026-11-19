@@ -23,7 +23,12 @@
     <!-- Step 1: pick a file -->
     <section id="pick" class="card">
       <h1>Send a file</h1>
+      <div class="tabs" role="tablist">
+        <button id="modeUpload" class="tab active" type="button" role="tab" aria-selected="true">Upload &amp; share</button>
+        <button id="modeDirect" class="tab" type="button" role="tab" aria-selected="false">Send directly</button>
+      </div>
       <p class="muted small" id="limitText">Drop a file, get a QR code, scan it on another device.</p>
+      <p class="muted small hidden" id="directText">Device to device. Nothing is stored on the server and there's no size limit. Keep this page open until the other person has the file.</p>
 
       <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="Choose a file to upload">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -43,6 +48,7 @@
           <button class="btn-link" id="clearBtn" type="button" aria-label="Remove file">✕</button>
         </div>
 
+        <div id="uploadOptions">
         <div class="options">
           <label class="field">Delete after
             <select id="expiry">
@@ -71,6 +77,12 @@
           <p class="muted small">Tell the receiver this PIN yourself. It is not in the QR code.</p>
         </div>
 
+        <label class="check">
+          <input id="e2eToggle" type="checkbox" checked> End-to-end encrypt
+        </label>
+        <p class="muted small hint">Encrypted in your browser. The key is only in the QR link, so even the server can't open the file.</p>
+        </div>
+
         <button id="uploadBtn" class="btn btn-primary btn-block" type="button">Create QR code</button>
       </div>
 
@@ -81,6 +93,27 @@
         <div><b>2. Show QR</b>We make a code</div>
         <div><b>3. Scan</b>They download it</div>
       </div>
+    </section>
+
+    <!-- Direct (P2P) transfer -->
+    <section id="direct" class="card hidden">
+      <h2 class="center" id="dTitle">Waiting for someone to scan…</h2>
+      <p class="muted small center" id="dSub">Keep this page open. The file goes straight to their device.</p>
+      <div class="qr-wrap"><img id="dQr" alt="QR code for direct transfer"></div>
+      <div class="link-box">
+        <input id="dLink" type="text" readonly aria-label="Direct transfer link">
+        <button id="dCopyBtn" class="btn btn-ghost" type="button">Copy</button>
+      </div>
+      <div id="dProgressBox" class="hidden">
+        <div class="progress"><div id="dBar"></div></div>
+        <div class="progress-stats"><span id="dPercent"></span><span id="dStats"></span></div>
+      </div>
+      <dl class="facts">
+        <dt>File</dt><dd id="dName"></dd>
+        <dt>Size</dt><dd id="dSize"></dd>
+        <dt>Sent to</dt><dd id="dCount">0 people</dd>
+      </dl>
+      <button id="dStopBtn" class="btn btn-ghost btn-block" type="button">Stop sharing</button>
     </section>
 
     <!-- Step 2: uploading -->
@@ -116,6 +149,7 @@
         <dt>Expires</dt><dd id="doneExpiry"></dd>
         <dt>Downloads</dt><dd id="doneDownloads"></dd>
         <dt>PIN</dt><dd id="donePin"></dd>
+        <dt>Encryption</dt><dd id="doneE2e"></dd>
       </dl>
 
       <div class="row" style="margin-top:20px">

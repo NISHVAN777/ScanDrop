@@ -275,3 +275,38 @@ footer {
   .options { grid-template-columns: 1fr; }
   .steps { grid-template-columns: 1fr; text-align: left; }
 }
+
+.badge {
+  display: inline-block;
+  margin: 4px 0 0;
+  padding: 6px 12px;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--success) 14%, transparent);
+  color: var(--success);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  margin: 12px 0 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.tab {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+.tab.active { background: var(--card); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+.hint { margin: 4px 0 0 26px; }

@@ -49,8 +49,15 @@ export function uploadRoutes({ files, uploads, limits, publicInfo }) {
   }
 
   r.post('/', limits.createUpload, express.json({ limit: '4kb' }), (req, res) => {
-    const { name, size, mime, expiry, maxDownloads, pin } = req.body || {};
+    const { name, size, mime, expiry, maxDownloads, pin, encrypted, meta } = req.body || {};
     const bytes = Number(size);
+
+    // End-to-end encrypted: the server only gets ciphertext plus an encrypted
+    // "meta" blob (real name/type/size). The key never reaches the server.
+    const isEncrypted = encrypted === true;
+    if (isEncrypted && !(typeof meta === 'string' && /^[A-Za-z0-9_-]{20,4096}$/.test(meta))) {
+      return res.status(400).json({ error: 'Invalid encrypted file details.' });
+    }
 
     if (!Number.isSafeInteger(bytes) || bytes <= 0) {
       return res.status(400).json({ error: 'Invalid or empty file.' });
@@ -74,9 +81,11 @@ export function uploadRoutes({ files, uploads, limits, publicInfo }) {
     const now = Date.now();
     const upload = {
       id,
-      name: cleanFileName(name),
+      name: isEncrypted ? 'encrypted.bin' : cleanFileName(name),
       size: bytes,
-      mime: cleanMime(mime),
+      mime: isEncrypted ? 'application/octet-stream' : cleanMime(mime),
+      encrypted: isEncrypted,
+      meta: isEncrypted ? meta : null,
       expiryKey: EXPIRY_OPTIONS[expiry] ? expiry : DEFAULT_EXPIRY,
       maxDownloads: DOWNLOAD_LIMIT_OPTIONS.includes(limit) ? limit : DEFAULT_DOWNLOAD_LIMIT,
       pinHash: hasPin ? hashPin(String(pin)) : null,
@@ -164,6 +173,9 @@ export function uploadRoutes({ files, uploads, limits, publicInfo }) {
       name: u.name,
       size: u.size,
       mime: u.mime,
+      encrypted: Boolean(u.encrypted),
+      meta: u.meta || null,
+      chunkSize: u.chunkSize,
       diskPath: finalPath,
       createdAt: now,
       expiresAt: now + EXPIRY_OPTIONS[u.expiryKey],

@@ -8,6 +8,8 @@
  *   refresh or crash continues where it stopped instead of starting over.
  */
 
+import { FileKey, encryptedLayout } from './e2e.js';
+
 const PARALLEL = 3;
 const MAX_RETRIES = 5;
 const RESUME_PREFIX = 'scandrop:resume:';
@@ -57,7 +59,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 export class ChunkedUpload {
   /**
    * @param {File} file
-   * @param {{expiry: string, maxDownloads: number, pin?: string}} options
+   * @param {{expiry: string, maxDownloads: number, pin?: string, encrypt?: boolean}} options
    * @param {{onProgress?: Function, onState?: Function}} hooks
    */
   constructor(file, options, hooks = {}) {
@@ -71,6 +73,9 @@ export class ChunkedUpload {
     this.state = 'idle';    // idle | uploading | paused | completing | done | cancelled | error
     this.resumedFrom = 0;   // bytes already on the server when we started
     this.samples = [];      // [time, bytes] for speed calculation
+    this.fileKey = null;    // FileKey when end-to-end encrypted
+    this.plainChunk = 0;    // plaintext bytes per piece when encrypted
+    this.serverSize = file.size; // bytes the server stores (ciphertext is a bit bigger)
   }
 
   setState(state, detail) {
@@ -87,29 +92,48 @@ export class ChunkedUpload {
 
   chunkLength(i) {
     const { chunkSize } = this.status;
-    return Math.min(chunkSize, this.file.size - i * chunkSize);
+    return Math.min(chunkSize, this.serverSize - i * chunkSize);
   }
 
   /** Start (or continue a previously interrupted) upload. Resolves with file info when finished. */
   async start() {
+    const encrypt = Boolean(this.options.encrypt);
+    if (encrypt) this.key += ':e2e';
     const saved = storageGet(this.key);
     if (saved?.uploadId) {
       try {
         this.status = await api('GET', `/api/uploads/${saved.uploadId}`);
+        if (encrypt) this.fileKey = FileKey.fromString(saved.fileKey);
       } catch {
         storageDel(this.key); // expired or gone - start fresh
+        this.status = null;
       }
     }
+    if (encrypt) {
+      const { chunkSize } = this.status || (await api('GET', '/api/config'));
+      const layout = encryptedLayout(this.file.size, chunkSize);
+      this.plainChunk = layout.plainChunk;
+      this.serverSize = layout.encryptedSize;
+    }
     if (!this.status) {
-      this.status = await api('POST', '/api/uploads', {
-        name: this.file.name,
-        size: this.file.size,
-        mime: this.file.type,
+      const body = {
         expiry: this.options.expiry,
         maxDownloads: this.options.maxDownloads,
         pin: this.options.pin || undefined,
-      });
-      storageSet(this.key, { uploadId: this.status.uploadId });
+      };
+      if (encrypt) {
+        this.fileKey = FileKey.generate();
+        Object.assign(body, {
+          encrypted: true,
+          size: this.serverSize,
+          meta: await this.fileKey.encryptMeta({ name: this.file.name, mime: this.file.type, size: this.file.size }),
+        });
+      } else {
+        Object.assign(body, { name: this.file.name, size: this.file.size, mime: this.file.type });
+      }
+      this.status = await api('POST', '/api/uploads', body);
+      // The key is kept locally only until the upload finishes, so it can resume.
+      storageSet(this.key, { uploadId: this.status.uploadId, fileKey: this.fileKey?.toString() });
     }
     this.done = new Set(this.status.received);
     this.resumedFrom = this.uploadedBytes;
@@ -159,6 +183,12 @@ export class ChunkedUpload {
     this.setState('completing');
     const info = await api('POST', `/api/uploads/${this.status.uploadId}/complete`);
     storageDel(this.key);
+    if (this.fileKey) {
+      info.fileKey = this.fileKey.toString();
+      info.url = `${info.url}#${info.fileKey}`; // key stays in the fragment, never sent to the server
+      info.name = this.file.name;
+      info.size = this.file.size;
+    }
     this.setState('done', info);
     return info;
   }
@@ -175,10 +205,21 @@ export class ChunkedUpload {
     }
   }
 
-  sendChunk(index) {
-    return new Promise((resolve, reject) => {
+  /** The bytes to send for piece `index`: a slice of the file, encrypted if enabled. */
+  async chunkBody(index) {
+    if (!this.fileKey) {
       const start = index * this.status.chunkSize;
-      const blob = this.file.slice(start, start + this.chunkLength(index));
+      return this.file.slice(start, start + this.chunkLength(index));
+    }
+    const start = index * this.plainChunk;
+    const plain = await this.file.slice(start, start + this.plainChunk).arrayBuffer();
+    return this.fileKey.encryptChunk(index, plain);
+  }
+
+  async sendChunk(index) {
+    const body = await this.chunkBody(index);
+    if (this.state !== 'uploading') throw new UploadError('Paused.', { retryable: true });
+    return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
       const entry = { xhr, loaded: 0 };
       this.inflight.set(index, entry);
@@ -207,7 +248,7 @@ export class ChunkedUpload {
 
       xhr.open('PUT', `/api/uploads/${this.status.uploadId}/chunks/${index}`);
       xhr.setRequestHeader('Content-Type', 'application/octet-stream');
-      xhr.send(blob);
+      xhr.send(body);
     });
   }
 
@@ -220,9 +261,9 @@ export class ChunkedUpload {
     const speed = now > t0 ? ((bytes - b0) / (now - t0)) * 1000 : 0;
     this.hooks.onProgress?.({
       loaded: bytes,
-      total: this.file.size,
+      total: this.serverSize,
       speed,
-      eta: speed > 0 ? (this.file.size - bytes) / speed : Infinity,
+      eta: speed > 0 ? (this.serverSize - bytes) / speed : Infinity,
       chunksDone: this.done.size,
       totalChunks: this.status.totalChunks,
     });

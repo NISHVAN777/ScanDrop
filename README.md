@@ -4,6 +4,15 @@
 
 Upload a file, and ScanDrop gives you a QR code. Anyone who scans it with a phone camera gets a download page for the file. No sign-up and no app install. Files delete themselves automatically.
 
+Two ways to send:
+
+| | **Upload & share** | **Send directly** |
+|---|---|---|
+| How | File is stored (encrypted) on the server | File goes device to device (WebRTC) |
+| Sender must stay online | No | Yes, until it's received |
+| Size limit | 2 GB (configurable) | None |
+| Server can read the file | No (end-to-end encrypted) | Never touches the server |
+
 ## Features
 
 **Sending**
@@ -20,6 +29,19 @@ Upload a file, and ScanDrop gives you a QR code. Anyone who scans it with a phon
 - **Download limits:** 1 (one-time link), 5, 10 or unlimited
 - **PIN protection (optional, 4–8 digits):** the file name and contents stay hidden until the right PIN is entered. Five wrong tries locks the file for 10 minutes
 - Live download count for the sender
+
+**End-to-end encryption (on by default)**
+- Each file is encrypted in the sender's browser with its own random AES-256-GCM key
+- The key is only in the QR link, after `#`. Browsers never send that part to the server
+- The server stores only ciphertext. Even the file name and type are encrypted
+- The receiver's browser decrypts as it downloads, streaming to disk on Chrome/Edge
+- Works on phones opening plain `http://` addresses too: falls back to the audited [@noble/ciphers](https://github.com/paulmillr/noble-ciphers) when WebCrypto isn't available
+
+**Direct transfer (P2P)**
+- Pick "Send directly" and the receiver scans. The file streams straight between the two browsers
+- No size limit and no server storage. WebRTC traffic is encrypted (DTLS)
+- Several people can receive one after another while the sender keeps the page open
+- The server only relays tiny connection messages (Server-Sent Events + POST)
 
 **Receiving**
 - Mobile-friendly download page with resumable downloads (HTTP Range)
@@ -63,6 +85,7 @@ Set these as environment variables:
 | `CHUNK_MB` | `8` | Upload piece size, in MB |
 | `STORAGE_DIR` | `./storage` | Where files, metadata and the server secret are stored |
 | `TRUST_PROXY` | off | Set to `1` behind a reverse proxy so rate limits see real client IPs |
+| `STUN_URLS` | Google public STUN | Comma-separated STUN servers for direct transfers (empty = same network only) |
 
 ## How an upload works
 
@@ -92,7 +115,14 @@ Browser                                   Server
 | `GET` | `/api/files/:id/qr.svg` | QR code image |
 | `GET` | `/api/files/:id/download` | Download (`?t=<token>` for PIN files) |
 | `DELETE` | `/api/files/:id` | Delete now (needs `X-Owner-Token` header) |
-| `GET` | `/d/:id` | Download page (the URL inside the QR) |
+| `POST` | `/api/p2p` | Open a direct-transfer room. Returns `{ roomId, token, url }` |
+| `POST` | `/api/p2p/:id/join` | Receiver joins. Returns `{ token }` |
+| `GET` | `/api/p2p/:id/events?token=` | Server-Sent Events: `peer-joined`, `peer-left`, `signal`, `room-closed` |
+| `POST` | `/api/p2p/:id/signal` | `{ token, data }` relayed to the other device |
+| `GET` | `/d/:id` | Download page (the URL inside the QR; encrypted links add `#key`) |
+| `GET` | `/p/:id` | Direct-transfer receive page |
+
+Encrypted uploads send `{ encrypted: true, size: <ciphertext size>, meta: <encrypted details> }` instead of `name`/`mime`.
 
 ## Project structure
 
@@ -104,10 +134,17 @@ src/security.js        PIN hashing, tokens, rate limiter
 src/util.js            File name / MIME cleaning
 src/routes/uploads.js  Chunked upload API
 src/routes/files.js    Info, unlock, QR, download, delete
+src/routes/p2p.js      Signaling for direct transfers
 public/                Frontend (plain HTML/CSS/JS)
   index.html           Upload page
   download.html        Page opened by scanning the QR
-  js/uploader.js       Resumable chunked uploader
+  receive.html         Page opened by scanning a direct-transfer QR
+  js/uploader.js       Resumable chunked uploader (encrypts pieces when enabled)
+  js/e2e.js            AES-256-GCM encryption, keys in the link fragment
+  js/p2p.js            WebRTC direct transfer (sender + receiver)
+  js/save.js           Save streamed files (disk stream or Blob download)
+  js/qr.js             In-browser QR codes (keeps keys off the server)
+  js/receive.js        Direct-transfer receive page logic
   js/app.js            Upload page logic
   js/download.js       Download page logic
 storage/               Files, metadata, secret (git-ignored)
@@ -117,5 +154,7 @@ storage/               Files, metadata, secret (git-ignored)
 
 - [x] v1: upload, QR, download page, expiry, download limits
 - [x] v2: chunked/resumable uploads, PIN links, rate limiting, owner-only delete, storage cap
+- [x] v3: end-to-end encryption in the browser, direct peer-to-peer transfer (WebRTC)
 - [ ] Cloud storage (Cloudflare R2 / S3) with pre-signed URLs, so the server never carries file bytes
-- [ ] v3: end-to-end encryption in the browser, peer-to-peer transfer (WebRTC) for unlimited sizes
+- [ ] TURN server for direct transfers across strict networks (some office and mobile networks block P2P)
+- [ ] HTTPS for local network use

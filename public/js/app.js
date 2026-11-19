@@ -1,14 +1,18 @@
 import { formatBytes, formatDuration, timeLeft, downloadsText } from './utils.js';
 import { ChunkedUpload } from './uploader.js';
+import { qrDataUrl } from './qr.js';
+import { startDirectSend } from './p2p.js';
 
 const $ = (id) => document.getElementById(id);
-const sections = { pick: $('pick'), uploading: $('uploading'), done: $('done') };
+const sections = { pick: $('pick'), uploading: $('uploading'), done: $('done'), direct: $('direct') };
 
 let maxFileSize = Infinity;
 let chosenFile = null;
 let upload = null;   // current ChunkedUpload
 let current = null;  // info of the finished file
 let pollTimer = null;
+let mode = 'upload'; // 'upload' (via server) or 'direct' (P2P)
+let direct = null;   // running direct transfer
 
 // The sender's secret for each file (needed to delete it / see stats of PIN files).
 const ownerKey = (id) => `scandrop:owner:${id}`;
@@ -67,7 +71,7 @@ function choose(file) {
   showError('');
   if (!file) return;
   if (file.size === 0) return showError('That file is empty.');
-  if (file.size > maxFileSize) {
+  if (mode === 'upload' && file.size > maxFileSize) {
     return showError(`That file is ${formatBytes(file.size)}. The limit is ${formatBytes(maxFileSize)}.`);
   }
   chosenFile = file;
@@ -86,6 +90,28 @@ function resetPick() {
 
 $('clearBtn').addEventListener('click', resetPick);
 
+// ---------- Mode: upload vs direct ----------
+function setMode(next) {
+  mode = next;
+  const isDirect = mode === 'direct';
+  $('modeUpload').classList.toggle('active', !isDirect);
+  $('modeDirect').classList.toggle('active', isDirect);
+  $('modeUpload').setAttribute('aria-selected', String(!isDirect));
+  $('modeDirect').setAttribute('aria-selected', String(isDirect));
+  $('uploadOptions').classList.toggle('hidden', isDirect);
+  $('limitText').classList.toggle('hidden', isDirect);
+  $('directText').classList.toggle('hidden', !isDirect);
+  $('uploadBtn').textContent = isDirect ? 'Start direct transfer' : 'Create QR code';
+  showError('');
+  // A file that's too big to upload is fine for direct mode, and vice versa.
+  if (chosenFile && !isDirect && chosenFile.size > maxFileSize) {
+    resetPick();
+    showError(`That file is over the ${formatBytes(maxFileSize)} upload limit. Use "Send directly" instead.`);
+  }
+}
+$('modeUpload').addEventListener('click', () => setMode('upload'));
+$('modeDirect').addEventListener('click', () => setMode('direct'));
+
 // ---------- PIN option ----------
 $('pinToggle').addEventListener('change', () => {
   const on = $('pinToggle').checked;
@@ -99,6 +125,7 @@ $('pin').addEventListener('input', () => {
 // ---------- Upload ----------
 $('uploadBtn').addEventListener('click', () => {
   if (!chosenFile) return;
+  if (mode === 'direct') return startDirect(chosenFile);
   const pin = $('pinToggle').checked ? $('pin').value : '';
   if ($('pinToggle').checked && !/^\d{4,8}$/.test(pin)) {
     showError('PIN must be 4 to 8 digits.');
@@ -109,6 +136,7 @@ $('uploadBtn').addEventListener('click', () => {
     expiry: $('expiry').value,
     maxDownloads: Number($('maxDownloads').value),
     pin,
+    encrypt: $('e2eToggle').checked,
   });
 });
 
@@ -194,11 +222,13 @@ function finish(info, pin) {
   upload = null;
   setOwnerToken(info.id, info.ownerToken);
   current = info;
-  $('qr').src = `/api/files/${info.id}/qr.svg`;
+  // Drawn in the browser: an encrypted link's key must never be sent to the server.
+  $('qr').src = qrDataUrl(info.url);
   $('shareLink').value = info.url;
   $('doneName').textContent = info.name;
   $('doneSize').textContent = formatBytes(info.size);
   $('donePin').textContent = info.protected ? `${pin} (share it separately)` : 'None';
+  $('doneE2e').textContent = info.fileKey ? 'End-to-end encrypted 🔒' : 'Off';
   renderLive(info);
   show('done');
 
@@ -253,6 +283,79 @@ $('deleteBtn').addEventListener('click', async () => {
   await fetch(`/api/files/${current.id}`, { method: 'DELETE', headers: ownerHeaders(current.id) }).catch(() => {});
   try { localStorage.removeItem(ownerKey(current.id)); } catch { /* ignore */ }
   startOver();
+});
+
+// ---------- Direct (P2P) ----------
+async function startDirect(file) {
+  if (typeof RTCPeerConnection === 'undefined') {
+    return showError("This browser doesn't support direct transfers. Use Upload & share instead.");
+  }
+  showError('');
+  $('dTitle').textContent = 'Setting up…';
+  $('dSub').textContent = 'Keep this page open. The file goes straight to their device.';
+  $('dName').textContent = file.name;
+  $('dSize').textContent = formatBytes(file.size);
+  $('dCount').textContent = '0 people';
+  $('dProgressBox').classList.add('hidden');
+  $('dQr').removeAttribute('src');
+  show('direct');
+
+  let started = 0;
+  try {
+    direct = await startDirectSend(file, {
+      onReady: (url) => {
+        $('dLink').value = url;
+        $('dQr').src = qrDataUrl(url);
+        $('dTitle').textContent = 'Waiting for someone to scan…';
+      },
+      onStatus: (state, text) => {
+        $('dTitle').textContent = text;
+        if (state === 'sending') {
+          started = performance.now();
+          $('dProgressBox').classList.remove('hidden');
+        }
+        if (state === 'waiting') $('dProgressBox').classList.add('hidden');
+      },
+      onProgress: (sent, total) => {
+        const pct = (sent / total) * 100;
+        const speed = sent / Math.max((performance.now() - started) / 1000, 0.001);
+        $('dBar').style.width = `${pct.toFixed(1)}%`;
+        $('dPercent').textContent = `${Math.floor(pct)}%`;
+        $('dStats').textContent = `${formatBytes(speed)}/s · ${formatDuration((total - sent) / speed)} left`;
+      },
+      onDelivered: (count) => {
+        $('dCount').textContent = `${count} ${count === 1 ? 'person' : 'people'}`;
+      },
+      onClosed: (reason) => {
+        direct = null;
+        if (reason !== 'Stopped.') {
+          $('dTitle').textContent = reason;
+          $('dSub').textContent = 'Start again to share the file.';
+          $('dQr').style.opacity = '.25';
+        }
+      },
+    });
+  } catch (err) {
+    show('pick');
+    showError(err.message || 'Could not start a direct transfer.');
+  }
+}
+
+$('dCopyBtn').addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText($('dLink').value); } catch { $('dLink').select(); document.execCommand('copy'); }
+  $('dCopyBtn').textContent = 'Copied!';
+  setTimeout(() => { $('dCopyBtn').textContent = 'Copy'; }, 1500);
+});
+
+$('dStopBtn').addEventListener('click', () => {
+  direct?.stop();
+  direct = null;
+  $('dQr').style.opacity = '';
+  startOver();
+});
+
+window.addEventListener('beforeunload', (e) => {
+  if (direct) e.preventDefault(); // closing the page ends the direct transfer
 });
 
 function startOver() {

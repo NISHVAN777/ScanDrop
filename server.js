@@ -6,12 +6,13 @@ import {
   PORT, HOST, MAX_FILE_SIZE, CHUNK_SIZE, UPLOAD_DIR, PARTIAL_DIR, DB_FILE, UPLOADS_DB_FILE,
   SECRET_FILE, PUBLIC_DIR, EXPIRY_OPTIONS, DEFAULT_EXPIRY, DOWNLOAD_LIMIT_OPTIONS,
   DEFAULT_DOWNLOAD_LIMIT, CLEANUP_INTERVAL_MS, PENDING_UPLOAD_TTL, ACCESS_TOKEN_TTL,
-  TRUST_PROXY, getPublicBaseUrl,
+  TRUST_PROXY, ICE_SERVERS, getPublicBaseUrl,
 } from './src/config.js';
 import { createStore, unavailableReason } from './src/store.js';
 import { loadOrCreateSecret, createAccessTokens, rateLimit } from './src/security.js';
 import { uploadRoutes } from './src/routes/uploads.js';
 import { fileRoutes } from './src/routes/files.js';
+import { p2pRoutes } from './src/routes/p2p.js';
 
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 fs.mkdirSync(PARTIAL_DIR, { recursive: true });
@@ -22,6 +23,8 @@ const tokens = createAccessTokens(loadOrCreateSecret(SECRET_FILE), ACCESS_TOKEN_
 const activeDownloads = new Map(); // file id -> number of streams in progress
 
 const shareUrl = (id) => `${getPublicBaseUrl()}/d/${id}`;
+const p2pUrl = (id) => `${getPublicBaseUrl()}/p/${id}`;
+const NODE_MODULES = path.join(import.meta.dirname, 'node_modules');
 
 /** What the API reveals about a file. Never includes disk paths or secrets. */
 function publicInfo(r) {
@@ -35,6 +38,9 @@ function publicInfo(r) {
     maxDownloads: r.maxDownloads,
     downloads: r.downloads,
     protected: Boolean(r.pinHash),
+    encrypted: Boolean(r.encrypted),
+    meta: r.meta || null, // encrypted name/type/size - only the key holder can read it
+    chunkSize: r.encrypted ? r.chunkSize : undefined, // needed to decrypt piece by piece
     url: shareUrl(r.id),
   };
 }
@@ -50,6 +56,7 @@ const limits = {
   api: rateLimit({ windowMs: 60_000, max: 300 }),
   createUpload: rateLimit({ windowMs: 10 * 60_000, max: 30, message: 'Too many uploads. Please wait a few minutes.' }),
   chunk: rateLimit({ windowMs: 10 * 60_000, max: 3000 }),
+  createRoom: rateLimit({ windowMs: 10 * 60_000, max: 30, message: 'Too many direct transfers. Please wait a few minutes.' }),
   unlock: rateLimit({ windowMs: 10 * 60_000, max: 20, message: 'Too many PIN attempts. Please wait a few minutes.' }),
 };
 
@@ -73,6 +80,7 @@ app.get('/api/config', (req, res) => {
     defaultExpiry: DEFAULT_EXPIRY,
     downloadLimitOptions: DOWNLOAD_LIMIT_OPTIONS,
     defaultDownloadLimit: DEFAULT_DOWNLOAD_LIMIT,
+    iceServers: ICE_SERVERS,
   });
 });
 
@@ -80,11 +88,19 @@ app.use('/api/uploads', uploadRoutes({ files, uploads, limits, publicInfo }));
 app.use('/api/files', limits.api,
   fileRoutes({ files, limits, tokens, publicInfo, shareUrl, deleteFile, activeDownloads }));
 
+app.use('/api/p2p', p2pRoutes({ limits, p2pUrl }));
+
 app.use('/api', (req, res) => res.status(404).json({ error: 'Not found.' }));
 
 // ---------- Pages ----------
 
 app.get('/d/:id', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'download.html')));
+app.get('/p/:id', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'receive.html')));
+
+// Browser libraries, served straight from node_modules (no build step).
+app.use('/vendor/noble', express.static(path.join(NODE_MODULES, '@noble', 'ciphers'), { index: false }));
+app.get('/vendor/qrcode.mjs', (req, res) =>
+  res.sendFile(path.join(NODE_MODULES, 'qrcode-generator', 'dist', 'qrcode.mjs')));
 app.use(express.static(PUBLIC_DIR));
 app.use((req, res) => res.status(404).sendFile(path.join(PUBLIC_DIR, 'download.html')));
 

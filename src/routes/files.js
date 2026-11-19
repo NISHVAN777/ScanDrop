@@ -44,6 +44,7 @@ export function fileRoutes({ files, limits, tokens, publicInfo, shareUrl, delete
   const lockedInfo = (record) => ({
     id: record.id,
     protected: true,
+    encrypted: Boolean(record.encrypted),
     locked: record.lockedUntil > Date.now(),
     expiresAt: record.expiresAt,
     maxDownloads: record.maxDownloads,

@@ -31,7 +31,13 @@
       <h1 id="fileName" style="overflow-wrap:anywhere"></h1>
       <p class="muted" id="fileSize"></p>
 
+      <p id="e2eBadge" class="badge hidden">🔒 End-to-end encrypted. Decrypted on this device.</p>
       <a id="downloadBtn" class="btn btn-primary btn-block" href="#">Download</a>
+      <div id="dlProgress" class="hidden">
+        <div class="progress"><div id="dlBar"></div></div>
+        <div class="progress-stats"><span id="dlPercent"></span><span id="dlStats"></span></div>
+      </div>
+      <div id="dlError" class="alert hidden" role="alert" style="text-align:left"></div>
 
       <dl class="facts" style="text-align:left">
         <dt>Expires</dt><dd id="fileExpiry"></dd>

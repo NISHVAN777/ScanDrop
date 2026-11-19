@@ -30,6 +30,13 @@ export const PIN_MAX_ATTEMPTS = 5;               // wrong tries before a lock
 export const PIN_LOCK_MS = 10 * 60 * 1000;       // lock length after too many wrong tries
 export const ACCESS_TOKEN_TTL = 60 * 60 * 1000;  // how long an unlocked link stays unlocked
 
+// Direct (P2P) transfers. STUN helps two devices on different networks find each
+// other; on the same Wi-Fi it isn't needed. Comma-separated, e.g.
+// STUN_URLS=stun:stun.l.google.com:19302,stun:stun.cloudflare.com:3478
+export const ICE_SERVERS = (process.env.STUN_URLS ?? 'stun:stun.l.google.com:19302')
+  .split(',').map((s) => s.trim()).filter(Boolean).map((urls) => ({ urls }));
+export const P2P_ROOM_TTL = 12 * 60 * 60 * 1000;
+
 // Set TRUST_PROXY=1 when running behind a reverse proxy (Nginx, Render, etc.)
 // so rate limits see the real client IP.
 export const TRUST_PROXY = process.env.TRUST_PROXY ? Number(process.env.TRUST_PROXY) || 1 : false;
