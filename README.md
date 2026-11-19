@@ -25,6 +25,8 @@ Two ways to send:
 
 **Sharing**
 - QR code and copyable share link
+- **Share the QR:** opens the device's share sheet (WhatsApp, Telegram, Bluetooth, email…) with a QR image card and the link. Browsers without a share sheet get a built-in menu (WhatsApp, Telegram, Email, SMS, Save image, Copy link)
+- **Save image:** download the QR as a PNG card with the file name, ready to print or post
 - **Auto-expiry:** 10 minutes, 1 hour, 24 hours or 7 days
 - **Download limits:** 1 (one-time link), 5, 10 or unlimited
 - **PIN protection (optional, 4–8 digits):** the file name and contents stay hidden until the right PIN is entered. Five wrong tries locks the file for 10 minutes

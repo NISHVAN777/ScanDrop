@@ -2,6 +2,7 @@ import { formatBytes, formatDuration, timeLeft, downloadsText } from './utils.js
 import { ChunkedUpload } from './uploader.js';
 import { qrDataUrl } from './qr.js';
 import { startDirectSend } from './p2p.js';
+import { makeQrCard, shareQr, shareTargets, downloadBlob } from './share.js';
 
 const $ = (id) => document.getElementById(id);
 const sections = { pick: $('pick'), uploading: $('uploading'), done: $('done'), direct: $('direct') };
@@ -231,6 +232,7 @@ function finish(info, pin) {
   $('doneE2e').textContent = info.fileKey ? 'End-to-end encrypted 🔒' : 'Off';
   renderLive(info);
   show('done');
+  prepareUploadShare();
 
   // Keep download count / expiry fresh while the sender watches.
   clearInterval(pollTimer);
@@ -248,7 +250,10 @@ async function refresh() {
     const res = await fetch(`/api/files/${current.id}`, { headers: ownerHeaders(current.id) });
     if (res.ok) {
       const info = await res.json();
-      current = { ...current, ...info };
+      // Only take the live stats. The server doesn't know the real name or the
+      // key part of the link for encrypted files, so never overwrite those.
+      const { downloads, expiresAt, maxDownloads } = info;
+      current = { ...current, downloads, expiresAt, maxDownloads };
       renderLive(current);
     } else {
       const body = await res.json().catch(() => ({}));
@@ -262,6 +267,71 @@ async function refresh() {
     }
   } catch { /* offline: try again next tick */ }
 }
+
+// ---------- Share the QR (both screens) ----------
+/**
+ * Wire up the Share / Save image buttons. `getShare()` returns
+ * { url, fileName, subtitle } for whatever is on screen right now.
+ */
+function setupSharing(prefix, getShare) {
+  const menu = $(`${prefix}ShareMenu`);
+  let cache = { url: null, blob: null };
+
+  async function image() {
+    const s = getShare();
+    if (cache.url !== s.url) cache = { url: s.url, blob: await makeQrCard(s.url, { title: s.fileName, subtitle: s.subtitle }) };
+    return cache.blob;
+  }
+
+  $(`${prefix}SaveQrBtn`).addEventListener('click', async () => {
+    const s = getShare();
+    if (!s.url) return;
+    const safe = s.fileName.replace(/\.[^.]+$/, '').replace(/[^\w-]+/g, '-').slice(0, 40) || 'file';
+    downloadBlob(await image(), `scandrop-${safe}-qr.png`);
+  });
+
+  $(`${prefix}ShareBtn`).addEventListener('click', async () => {
+    const s = getShare();
+    if (!s.url) return;
+    if (!menu.classList.contains('hidden')) return menu.classList.add('hidden');
+    // Make the image first so the share sheet opens right away (it needs the click).
+    const blob = cache.url === s.url ? cache.blob : null;
+    if (await shareQr({ url: s.url, fileName: s.fileName, image: blob ?? await image() })) return;
+
+    // No system share sheet (e.g. some desktop browsers): show our own menu.
+    menu.replaceChildren(
+      ...shareTargets(s).map(({ label, href }) => Object.assign(document.createElement('a'), {
+        textContent: label, href, target: '_blank', rel: 'noopener noreferrer',
+      })),
+      Object.assign(document.createElement('button'), {
+        type: 'button', textContent: 'Save image',
+        onclick: () => $(`${prefix}SaveQrBtn`).click(),
+      }),
+      Object.assign(document.createElement('button'), {
+        type: 'button', textContent: 'Copy link',
+        onclick: async (e) => {
+          try { await navigator.clipboard.writeText(s.url); } catch { /* ignore */ }
+          e.target.textContent = 'Copied!';
+        },
+      }),
+    );
+    menu.classList.remove('hidden');
+  });
+
+  // Pre-draw the image as soon as a QR is shown, so sharing is instant.
+  return () => { menu.classList.add('hidden'); image().catch(() => {}); };
+}
+
+const prepareUploadShare = setupSharing('q', () => ({
+  url: current?.url,
+  fileName: current?.name || 'file',
+  subtitle: current?.protected ? 'Scan to download · PIN required' : 'Scan with your phone camera to download',
+}));
+let directShare = { url: null, fileName: 'file' };
+const prepareDirectShare = setupSharing('d', () => ({
+  ...directShare,
+  subtitle: 'Scan to receive directly from the sender',
+}));
 
 $('copyBtn').addEventListener('click', async () => {
   const input = $('shareLink');
@@ -306,6 +376,8 @@ async function startDirect(file) {
       onReady: (url) => {
         $('dLink').value = url;
         $('dQr').src = qrDataUrl(url);
+        directShare = { url, fileName: file.name };
+        prepareDirectShare();
         $('dTitle').textContent = 'Waiting for someone to scan…';
       },
       onStatus: (state, text) => {
