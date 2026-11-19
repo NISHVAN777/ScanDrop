@@ -99,6 +99,8 @@ app.get('/p/:id', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'receive.html
 
 // Browser libraries, served straight from node_modules (no build step).
 app.use('/vendor/noble', express.static(path.join(NODE_MODULES, '@noble', 'ciphers'), { index: false }));
+app.use('/vendor/fonts/bricolage', express.static(path.join(NODE_MODULES, '@fontsource-variable', 'bricolage-grotesque'), { index: false }));
+app.use('/vendor/fonts/atkinson', express.static(path.join(NODE_MODULES, '@fontsource', 'atkinson-hyperlegible'), { index: false }));
 app.get('/vendor/qrcode.mjs', (req, res) =>
   res.sendFile(path.join(NODE_MODULES, 'qrcode-generator', 'dist', 'qrcode.mjs')));
 app.use(express.static(PUBLIC_DIR));

@@ -54,6 +54,15 @@ Two ways to send:
 - Total storage cap, so the disk can't fill up
 - Random 12-character IDs, cleaned file names, slow-hashed PINs, signed short-lived download tokens
 
+**While you wait: Catch the drop**
+- A small game at the bottom of the home page. Move your phone to catch falling files (+1), grab the rare yellow QR tile (+5), and dodge broken files
+- It speeds up as you score. Your best score is remembered on your device
+- Mouse, finger or ← → keys. Space pauses. It pauses by itself when you scroll away or switch tabs
+
+**Design**
+- Bricolage Grotesque headings with Atkinson Hyperlegible body text, both served from the project (no outside font requests)
+- Light and dark themes, phone-first layout, visible keyboard focus. The QR "prints" in with a scan line, skipped when reduced motion is on
+
 ## Getting started
 
 Requires **Node.js 18+**.

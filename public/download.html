@@ -3,16 +3,20 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Download — ScanDrop</title>
+  <title>Download | ScanDrop</title>
   <meta name="robots" content="noindex">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/vendor/fonts/bricolage/standard.css">
+  <link rel="stylesheet" href="/vendor/fonts/atkinson/400.css">
+  <link rel="stylesheet" href="/vendor/fonts/atkinson/700.css">
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-  <header>
-    <a class="brand" href="/">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M17.5 14v7M14 17.5l3.5 3.5 3.5-3.5"/>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="ScanDrop home">
+      <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="2" y="2" width="9" height="9" rx="2"/><rect x="13" y="2" width="9" height="9" rx="2"/><rect x="2" y="13" width="9" height="9" rx="2"/>
+        <rect class="brand-drop" x="15" y="15" width="5" height="5" rx="1"/>
       </svg>
       ScanDrop
     </a>
@@ -72,7 +76,7 @@
     </section>
   </main>
 
-  <footer>ScanDrop · files are deleted automatically</footer>
+  <footer class="site-footer"><span>ScanDrop</span><span>Files delete themselves after they expire.</span></footer>
 
   <script type="module" src="/js/download.js"></script>
 </body>

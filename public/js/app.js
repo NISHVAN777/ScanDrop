@@ -40,7 +40,7 @@ fetch('/api/config')
   .then((cfg) => {
     maxFileSize = cfg.maxFileSize;
     $('limitText').textContent =
-      `Drop a file, get a QR code, scan it on another device. Up to ${formatBytes(maxFileSize)}.`;
+      `The file waits safely on the server, so they can download it later. Up to ${formatBytes(maxFileSize)}.`;
   })
   .catch(() => {});
 
@@ -145,7 +145,7 @@ async function startUpload(file, options) {
   showError('');
   show('uploading');
   $('upTitle').textContent = 'Starting…';
-  $('upName').textContent = `${file.name} · ${formatBytes(file.size)}`;
+  $('upName').textContent = `${file.name} (${formatBytes(file.size)})`;
   $('bar').style.width = '0%';
   $('upPercent').textContent = '0%';
   $('upStats').textContent = '';
@@ -167,8 +167,8 @@ async function startUpload(file, options) {
 function onProgress(p) {
   const pct = (p.loaded / p.total) * 100;
   $('bar').style.width = `${pct.toFixed(1)}%`;
-  $('upPercent').textContent = `${Math.floor(pct)}% · ${formatBytes(p.loaded)} of ${formatBytes(p.total)}`;
-  $('upStats').textContent = p.speed > 0 ? `${formatBytes(p.speed)}/s · ${formatDuration(p.eta)} left` : '';
+  $('upPercent').textContent = `${formatBytes(p.loaded)} of ${formatBytes(p.total)}`;
+  $('upStats').textContent = p.speed > 0 ? `${formatDuration(p.eta)} left, ${formatBytes(p.speed)}/s` : '';
 }
 
 function onState(state, detail) {
@@ -325,7 +325,7 @@ function setupSharing(prefix, getShare) {
 const prepareUploadShare = setupSharing('q', () => ({
   url: current?.url,
   fileName: current?.name || 'file',
-  subtitle: current?.protected ? 'Scan to download · PIN required' : 'Scan with your phone camera to download',
+  subtitle: current?.protected ? 'Scan to download. PIN required.' : 'Scan with your phone camera to download',
 }));
 let directShare = { url: null, fileName: 'file' };
 const prepareDirectShare = setupSharing('d', () => ({
@@ -393,7 +393,7 @@ async function startDirect(file) {
         const speed = sent / Math.max((performance.now() - started) / 1000, 0.001);
         $('dBar').style.width = `${pct.toFixed(1)}%`;
         $('dPercent').textContent = `${Math.floor(pct)}%`;
-        $('dStats').textContent = `${formatBytes(speed)}/s · ${formatDuration((total - sent) / speed)} left`;
+        $('dStats').textContent = `${formatDuration((total - sent) / speed)} left, ${formatBytes(speed)}/s`;
       },
       onDelivered: (count) => {
         $('dCount').textContent = `${count} ${count === 1 ? 'person' : 'people'}`;

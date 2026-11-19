@@ -29,7 +29,7 @@ async function start(roomId) {
       },
 
       onOffer: (meta, accept) => {
-        document.title = `${meta.name} — ScanDrop`;
+        document.title = `${meta.name} | ScanDrop`;
         $('fileName').textContent = meta.name;
         $('fileSize').textContent = formatBytes(meta.size);
         show('offer');
@@ -52,8 +52,8 @@ async function start(roomId) {
         const pct = (received / total) * 100;
         const speed = received / Math.max((performance.now() - started) / 1000, 0.001);
         $('bar').style.width = `${pct.toFixed(1)}%`;
-        $('percent').textContent = `${Math.floor(pct)}% · ${formatBytes(received)} of ${formatBytes(total)}`;
-        $('stats').textContent = `${formatBytes(speed)}/s · ${formatDuration((total - received) / speed)} left`;
+        $('percent').textContent = `${formatBytes(received)} of ${formatBytes(total)}`;
+        $('stats').textContent = `${formatDuration((total - received) / speed)} left, ${formatBytes(speed)}/s`;
       },
 
       onDone: () => {

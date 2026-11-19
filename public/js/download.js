@@ -103,7 +103,7 @@ async function showFile(id, info) {
     }
   }
 
-  document.title = `${info.name} — ScanDrop`;
+  document.title = `${info.name} | ScanDrop`;
   $('fileName').textContent = info.name;
   $('fileSize').textContent = formatBytes(info.plainSize ?? info.size);
   $('fileExpiry').textContent = timeLeft(info.expiresAt);
@@ -164,8 +164,8 @@ async function decryptAndSave(id, info, btn) {
       const pct = (written / info.plainSize) * 100;
       const speed = written / ((performance.now() - started) / 1000);
       $('dlBar').style.width = `${pct.toFixed(1)}%`;
-      $('dlPercent').textContent = `${Math.floor(pct)}% · ${formatBytes(written)} of ${formatBytes(info.plainSize)}`;
-      $('dlStats').textContent = `${formatBytes(speed)}/s · ${formatDuration((info.plainSize - written) / speed)} left`;
+      $('dlPercent').textContent = `${formatBytes(written)} of ${formatBytes(info.plainSize)}`;
+      $('dlStats').textContent = `${formatDuration((info.plainSize - written) / speed)} left, ${formatBytes(speed)}/s`;
     };
 
     for (;;) {
