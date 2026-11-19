@@ -42,6 +42,20 @@
       </p>
     </section>
 
+    <section id="locked" class="card center hidden">
+      <svg class="big-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>
+      </svg>
+      <h1>This file is PIN-protected</h1>
+      <p class="muted">Ask the sender for the PIN.</p>
+      <form id="pinForm">
+        <input id="pin" class="pin-input" type="text" inputmode="numeric" autocomplete="one-time-code"
+               maxlength="8" placeholder="Enter PIN" aria-label="PIN" required>
+        <button id="unlockBtn" class="btn btn-primary btn-block" type="submit">Unlock</button>
+      </form>
+      <div id="pinError" class="alert hidden" role="alert" style="text-align:left"></div>
+    </section>
+
     <section id="gone" class="card center hidden">
       <svg class="big-icon bad" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/>

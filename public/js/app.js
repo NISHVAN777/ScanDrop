@@ -1,13 +1,23 @@
 import { formatBytes, formatDuration, timeLeft, downloadsText } from './utils.js';
+import { ChunkedUpload } from './uploader.js';
 
 const $ = (id) => document.getElementById(id);
 const sections = { pick: $('pick'), uploading: $('uploading'), done: $('done') };
 
 let maxFileSize = Infinity;
 let chosenFile = null;
-let currentXhr = null;
-let current = null; // info of the uploaded file
+let upload = null;   // current ChunkedUpload
+let current = null;  // info of the finished file
 let pollTimer = null;
+
+// The sender's secret for each file (needed to delete it / see stats of PIN files).
+const ownerKey = (id) => `scandrop:owner:${id}`;
+const getOwnerToken = (id) => { try { return localStorage.getItem(ownerKey(id)); } catch { return null; } };
+const setOwnerToken = (id, t) => { try { localStorage.setItem(ownerKey(id), t); } catch { /* ignore */ } };
+const ownerHeaders = (id) => {
+  const t = (current && current.id === id && current.ownerToken) || getOwnerToken(id);
+  return t ? { 'X-Owner-Token': t } : {};
+};
 
 function show(name) {
   for (const [key, el] of Object.entries(sections)) el.classList.toggle('hidden', key !== name);
@@ -76,76 +86,119 @@ function resetPick() {
 
 $('clearBtn').addEventListener('click', resetPick);
 
+// ---------- PIN option ----------
+$('pinToggle').addEventListener('change', () => {
+  const on = $('pinToggle').checked;
+  $('pinRow').classList.toggle('hidden', !on);
+  if (on) $('pin').focus();
+});
+$('pin').addEventListener('input', () => {
+  $('pin').value = $('pin').value.replace(/\D/g, '').slice(0, 8);
+});
+
 // ---------- Upload ----------
 $('uploadBtn').addEventListener('click', () => {
   if (!chosenFile) return;
-  upload(chosenFile);
+  const pin = $('pinToggle').checked ? $('pin').value : '';
+  if ($('pinToggle').checked && !/^\d{4,8}$/.test(pin)) {
+    showError('PIN must be 4 to 8 digits.');
+    $('pin').focus();
+    return;
+  }
+  startUpload(chosenFile, {
+    expiry: $('expiry').value,
+    maxDownloads: Number($('maxDownloads').value),
+    pin,
+  });
 });
 
-function upload(file) {
+async function startUpload(file, options) {
   showError('');
   show('uploading');
+  $('upTitle').textContent = 'Starting…';
   $('upName').textContent = `${file.name} · ${formatBytes(file.size)}`;
   $('bar').style.width = '0%';
   $('upPercent').textContent = '0%';
   $('upStats').textContent = '';
+  $('upNote').textContent = '';
+  $('pauseBtn').textContent = 'Pause';
+  $('pauseBtn').disabled = false;
 
-  const form = new FormData();
-  // Fields first, then the file.
-  form.append('expiry', $('expiry').value);
-  form.append('maxDownloads', $('maxDownloads').value);
-  form.append('file', file, file.name);
-
-  // XMLHttpRequest (not fetch) because it reports upload progress.
-  const xhr = new XMLHttpRequest();
-  currentXhr = xhr;
-  const started = performance.now();
-
-  xhr.upload.onprogress = (e) => {
-    if (!e.lengthComputable) return;
-    const pct = (e.loaded / e.total) * 100;
-    const secs = (performance.now() - started) / 1000;
-    const speed = e.loaded / Math.max(secs, 0.001);
-    const eta = (e.total - e.loaded) / speed;
-    $('bar').style.width = `${pct.toFixed(1)}%`;
-    $('upPercent').textContent = pct >= 100 ? 'Finishing…' : `${Math.floor(pct)}%`;
-    $('upStats').textContent = `${formatBytes(speed)}/s · ${formatDuration(eta)} left`;
-  };
-
-  xhr.onload = () => {
-    currentXhr = null;
-    let body = {};
-    try { body = JSON.parse(xhr.responseText); } catch { /* not JSON */ }
-    if (xhr.status === 201) {
-      showResult(body);
-    } else {
-      show('pick');
-      showError(body.error || `Upload failed (error ${xhr.status}).`);
-    }
-  };
-  xhr.onerror = () => {
-    currentXhr = null;
+  upload = new ChunkedUpload(file, options, { onProgress, onState });
+  try {
+    const info = await upload.start();
+    if (info) finish(info, options.pin);
+  } catch (err) {
+    if (upload?.state === 'cancelled') return;
     show('pick');
-    showError('Network error. Check your connection and try again.');
-  };
-  xhr.onabort = () => {
-    currentXhr = null;
-    show('pick');
-  };
-
-  xhr.open('POST', '/api/upload');
-  xhr.send(form);
+    showError(err.message || 'Upload failed.');
+  }
 }
 
-$('cancelBtn').addEventListener('click', () => currentXhr && currentXhr.abort());
+function onProgress(p) {
+  const pct = (p.loaded / p.total) * 100;
+  $('bar').style.width = `${pct.toFixed(1)}%`;
+  $('upPercent').textContent = `${Math.floor(pct)}% · ${formatBytes(p.loaded)} of ${formatBytes(p.total)}`;
+  $('upStats').textContent = p.speed > 0 ? `${formatBytes(p.speed)}/s · ${formatDuration(p.eta)} left` : '';
+}
+
+function onState(state, detail) {
+  if (state === 'uploading') {
+    $('upTitle').textContent = 'Uploading…';
+    $('pauseBtn').textContent = 'Pause';
+    $('upNote').textContent = detail?.resumed
+      ? 'Continuing your earlier upload. Parts already sent are skipped.'
+      : '';
+  } else if (state === 'paused') {
+    $('upTitle').textContent = 'Paused';
+    $('pauseBtn').textContent = 'Resume';
+    $('upStats').textContent = '';
+    $('upNote').textContent = detail?.reason
+      ? `${detail.reason} Press Resume when you're back online. Your progress is saved.`
+      : 'Your progress is saved. You can even close this page and pick the same file again later.';
+  } else if (state === 'completing') {
+    $('upTitle').textContent = 'Finishing…';
+    $('pauseBtn').disabled = true;
+    $('upStats').textContent = '';
+  }
+}
+
+$('pauseBtn').addEventListener('click', async () => {
+  if (!upload) return;
+  if (upload.state === 'uploading') return upload.pause();
+  if (upload.state === 'paused') {
+    try {
+      const info = await upload.resume();
+      if (info) finish(info, upload.options.pin);
+    } catch (err) {
+      show('pick');
+      showError(err.message || 'Upload failed.');
+    }
+  }
+});
+
+$('cancelBtn').addEventListener('click', async () => {
+  if (!upload) return;
+  await upload.cancel();
+  upload = null;
+  show('pick');
+});
+
+// Warn before closing the tab mid-upload (progress is saved, but still).
+window.addEventListener('beforeunload', (e) => {
+  if (upload?.state === 'uploading') e.preventDefault();
+});
 
 // ---------- Result ----------
-function showResult(info) {
+function finish(info, pin) {
+  upload = null;
+  setOwnerToken(info.id, info.ownerToken);
   current = info;
   $('qr').src = `/api/files/${info.id}/qr.svg`;
   $('shareLink').value = info.url;
   $('doneName').textContent = info.name;
   $('doneSize').textContent = formatBytes(info.size);
+  $('donePin').textContent = info.protected ? `${pin} (share it separately)` : 'None';
   renderLive(info);
   show('done');
 
@@ -162,16 +215,19 @@ function renderLive(info) {
 async function refresh() {
   if (!current) return;
   try {
-    const res = await fetch(`/api/files/${current.id}`);
+    const res = await fetch(`/api/files/${current.id}`, { headers: ownerHeaders(current.id) });
     if (res.ok) {
-      current = await res.json();
+      const info = await res.json();
+      current = { ...current, ...info };
       renderLive(current);
     } else {
       const body = await res.json().catch(() => ({}));
       clearInterval(pollTimer);
       $('doneExpiry').textContent = '—';
       $('doneDownloads').textContent =
-        body.reason === 'limit_reached' ? 'Download limit reached, file deleted' : 'File no longer available';
+        body.reason === 'limit_reached' || body.reason === 'not_found'
+          ? 'Downloaded. File deleted.'
+          : 'File no longer available';
       $('qr').style.opacity = '.25';
     }
   } catch { /* offline: try again next tick */ }
@@ -194,7 +250,8 @@ $('newBtn').addEventListener('click', startOver);
 $('deleteBtn').addEventListener('click', async () => {
   if (!current) return;
   if (!confirm('Delete this file now? The QR code will stop working.')) return;
-  await fetch(`/api/files/${current.id}`, { method: 'DELETE' }).catch(() => {});
+  await fetch(`/api/files/${current.id}`, { method: 'DELETE', headers: ownerHeaders(current.id) }).catch(() => {});
+  try { localStorage.removeItem(ownerKey(current.id)); } catch { /* ignore */ }
   startOver();
 });
 
@@ -203,6 +260,9 @@ function startOver() {
   current = null;
   $('qr').removeAttribute('src');
   $('qr').style.opacity = '';
+  $('pin').value = '';
+  $('pinToggle').checked = false;
+  $('pinRow').classList.add('hidden');
   resetPick();
   show('pick');
 }

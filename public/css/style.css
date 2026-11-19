@@ -134,6 +134,31 @@ select {
   padding: 9px 10px;
 }
 
+.check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  font-size: 15px;
+  cursor: pointer;
+}
+.check input { width: 18px; height: 18px; accent-color: var(--accent); }
+.pin-input {
+  width: 100%;
+  margin-top: 10px;
+  font: 600 22px/1 ui-monospace, Consolas, monospace;
+  letter-spacing: .3em;
+  text-align: center;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+}
+.pin-input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+#pinRow p { margin: 6px 0 0; }
+#upNote:empty { display: none; }
+
 .btn {
   display: inline-flex;
   align-items: center;

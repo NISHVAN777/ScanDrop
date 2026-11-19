@@ -12,7 +12,11 @@
     "type": "git",
     "url": "git+https://github.com/NISHVAN777/ScanDrop.git"
   },
-  "keywords": ["file-sharing", "qr-code", "transfer"],
+  "keywords": [
+    "file-sharing",
+    "qr-code",
+    "transfer"
+  ],
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/NISHVAN777/ScanDrop/issues"
@@ -22,7 +26,6 @@
     "node": ">=18"
   },
   "dependencies": {
-    "busboy": "^1.6.0",
     "express": "^4.22.3",
     "qrcode": "^1.5.4"
   }

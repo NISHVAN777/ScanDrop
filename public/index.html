@@ -62,6 +62,15 @@
           </label>
         </div>
 
+        <label class="check">
+          <input id="pinToggle" type="checkbox"> Protect with a PIN
+        </label>
+        <div id="pinRow" class="hidden">
+          <input id="pin" class="pin-input" type="text" inputmode="numeric" autocomplete="off"
+                 maxlength="8" placeholder="4–8 digits" aria-label="PIN">
+          <p class="muted small">Tell the receiver this PIN yourself. It is not in the QR code.</p>
+        </div>
+
         <button id="uploadBtn" class="btn btn-primary btn-block" type="button">Create QR code</button>
       </div>
 
@@ -76,14 +85,18 @@
 
     <!-- Step 2: uploading -->
     <section id="uploading" class="card hidden">
-      <h2>Uploading…</h2>
+      <h2 id="upTitle">Uploading…</h2>
       <p class="muted small" id="upName"></p>
       <div class="progress"><div id="bar"></div></div>
       <div class="progress-stats">
         <span id="upPercent">0%</span>
         <span id="upStats"></span>
       </div>
-      <button id="cancelBtn" class="btn btn-ghost btn-block" type="button">Cancel</button>
+      <p class="muted small" id="upNote"></p>
+      <div class="row" style="margin-top:12px">
+        <button id="pauseBtn" class="btn btn-ghost" type="button">Pause</button>
+        <button id="cancelBtn" class="btn btn-ghost" type="button">Cancel</button>
+      </div>
     </section>
 
     <!-- Step 3: share -->
@@ -102,6 +115,7 @@
         <dt>Size</dt><dd id="doneSize"></dd>
         <dt>Expires</dt><dd id="doneExpiry"></dd>
         <dt>Downloads</dt><dd id="doneDownloads"></dd>
+        <dt>PIN</dt><dd id="donePin"></dd>
       </dl>
 
       <div class="row" style="margin-top:20px">
