@@ -176,6 +176,20 @@ public/                Frontend (plain HTML/CSS/JS)
 storage/               Files, metadata, secret (git-ignored)
 ```
 
+## Developer
+
+<img src="public/img/nishvan-kumar.webp" alt="Nishvan Kumar M" width="140" align="left" style="margin-right:16px;border-radius:12px">
+
+**Nishvan Kumar M**
+Computer Science student and full-stack developer, Salem, Tamil Nadu, India
+
+B.E. Computer Science and Engineering, Sona College of Technology (2024 to 2027).
+Works across full-stack web development, machine learning and IoT.
+
+[Portfolio](https://nishvan-portfolio.vercel.app) · [GitHub](https://github.com/NISHVAN777) · [LinkedIn](https://www.linkedin.com/in/nishvan-kumar) · [Email](mailto:nishvankumar7@gmail.com)
+
+<br clear="left">
+
 ## Roadmap
 
 - [x] v1: upload, QR, download page, expiry, download limits
