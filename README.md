@@ -99,7 +99,7 @@ rate limits, path tricks, security headers, and P2P signaling.
 
 ## Deploying to Fly.io
 
-ScanDrop deploys automatically with GitHub Actions on every push to `main`: tests run first, then the app is deployed to [Fly.io](https://fly.io) (Mumbai region) at `https://scandrop-nishvan.fly.dev`.
+ScanDrop deploys automatically with GitHub Actions on every push to `main`: tests run first, then the app is deployed to [Fly.io](https://fly.io) (Singapore region, the closest to India) at `https://scandrop-nishvan.fly.dev`.
 
 One-time setup:
 
@@ -113,7 +113,7 @@ Files in the repo:
 | File | What it does |
 |---|---|
 | `Dockerfile`, `docker-entrypoint.sh` | Production image (Node 22, runs as a non-root user) |
-| `fly.toml` | Fly.io settings: Mumbai region, HTTPS, health check, one always-on machine, volume at `/data` |
+| `fly.toml` | Fly.io settings: Singapore region, HTTPS, health check, one always-on machine, volume at `/data` |
 | `.github/workflows/fly-deploy.yml` | Runs the tests, creates the app and volume on first run, then deploys |
 
 On Fly.io, QR links automatically use `https://<app>.fly.dev`. Set `PUBLIC_URL` if you add a custom domain. Keep the app on **one machine**: uploads in progress and direct-transfer rooms live in that machine's memory and volume.

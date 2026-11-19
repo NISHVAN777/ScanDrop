@@ -2,7 +2,7 @@
 # Docs: https://fly.io/docs/reference/configuration/
 
 app = "scandrop-nishvan"
-primary_region = "bom"          # Mumbai, India
+primary_region = "sin"          # Singapore (closest Fly.io region to India)
 kill_signal = "SIGTERM"         # lets the app save its file list before stopping
 kill_timeout = "10s"
 

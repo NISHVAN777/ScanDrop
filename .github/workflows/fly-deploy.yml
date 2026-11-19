@@ -41,8 +41,10 @@ jobs:
 
       - uses: superfly/flyctl-actions/setup-flyctl@master
 
-      - name: Read app name from fly.toml
-        run: echo "APP=$(grep -E '^app *=' fly.toml | cut -d'"' -f2)" >> "$GITHUB_ENV"
+      - name: Read app name and region from fly.toml
+        run: |
+          echo "APP=$(grep -E '^app *=' fly.toml | cut -d'"' -f2)" >> "$GITHUB_ENV"
+          echo "REGION=$(grep -E '^primary_region *=' fly.toml | cut -d'"' -f2)" >> "$GITHUB_ENV"
 
       - name: Create the app (first deploy only)
         env:
@@ -64,7 +66,7 @@ jobs:
       - name: Create the storage volume (first deploy only)
         run: |
           if ! flyctl volumes list --app "$APP" --json | grep -q '"scandrop_data"'; then
-            flyctl volumes create scandrop_data --app "$APP" --region bom --size 3 --yes
+            flyctl volumes create scandrop_data --app "$APP" --region "$REGION" --size 3 --yes
           fi
 
       - name: Deploy
