@@ -45,10 +45,21 @@ jobs:
         run: echo "APP=$(grep -E '^app *=' fly.toml | cut -d'"' -f2)" >> "$GITHUB_ENV"
 
       - name: Create the app (first deploy only)
+        env:
+          # Repository variable naming the Fly.io organization to create the app in.
+          FLY_ORG: ${{ vars.FLY_ORG }}
         run: |
-          if ! flyctl status --app "$APP" > /dev/null 2>&1; then
-            flyctl apps create "$APP" --org personal
+          if flyctl status --app "$APP" > /dev/null 2>&1; then
+            echo "App $APP already exists."
+            exit 0
           fi
+          echo "Fly.io organizations this token can use:"
+          flyctl orgs list || true
+          if [ -z "$FLY_ORG" ]; then
+            echo "::error::Set a repository variable FLY_ORG to the organization slug to deploy into (Settings > Secrets and variables > Actions > Variables)."
+            exit 1
+          fi
+          flyctl apps create "$APP" --org "$FLY_ORG"
 
       - name: Create the storage volume (first deploy only)
         run: |
