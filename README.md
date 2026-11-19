@@ -55,15 +55,15 @@ Two ways to send:
 - Random 12-character IDs, cleaned file names, slow-hashed PINs, signed short-lived download tokens
 
 **While you wait: Catch the drop**
-- A neon mini game at the bottom of the home page. Move your phone to catch falling files (+1), grab the rare gold QR tile (+5), and dodge red broken files
+- A mini game at the bottom of the home page. Move your phone to catch falling files (+1), grab the rare yellow QR tile (+5), and dodge the dark broken files
 - Catch 5 in a row for x2 points, 10 in a row for x3. It speeds up as you score, and your best score is remembered on your device
 - Mouse, finger or ← → keys. Space pauses. It pauses by itself when you scroll away or switch tabs
 
 **Design**
-- Dark, premium look: animated aurora background, frosted-glass cards with a glowing rim that follows the mouse, gradient headline and buttons with a shine sweep
-- Confetti and a glowing pulse when your QR code is ready; the code "prints" in behind a scan line
-- Bricolage Grotesque headings and Atkinson Hyperlegible body text, served from the project (no outside font requests)
-- Phone-first layout, visible keyboard focus, and all decorative motion turns off when reduced motion is on
+- A full product website: sticky navigation, hero with the working send card, features, how it works, the two sending modes, security, the game, FAQ, a final call to action and a footer
+- Indigo-to-violet gradient with clean white cards, gradient buttons and icons, and the Roboto font served from the project
+- All colors are set once at the top of `public/css/style.css`, so the whole site can be recolored there
+- Phone-first layout with a menu button on small screens; decorative motion turns off when reduced motion is on
 
 ## Getting started
 

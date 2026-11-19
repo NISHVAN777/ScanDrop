@@ -42,7 +42,7 @@ export function makeQrCard(url, { title, subtitle }) {
   ctx.fillRect(0, 0, W, H);
 
   // Header: logo mark + name
-  ctx.fillStyle = '#1f6feb';
+  ctx.fillStyle = '#4f46e5';
   const mark = 34;
   const markX = W / 2 - 100;
   const markY = 52;

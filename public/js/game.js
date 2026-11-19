@@ -25,10 +25,21 @@ function init() {
   const ctx = canvas.getContext('2d');
   const LABELS = ['PDF', 'JPG', 'MP4', 'ZIP', 'DOC', 'PNG', 'MP3', 'XLS'];
   const START_LIVES = 3;
-  const C = {
-    violet: '#a78bfa', indigo: '#6366f1', blue: '#3b82f6', cyan: '#22d3ee',
-    pink: '#ec4899', gold: '#fbbf24', red: '#fb7185', white: '#f4f3ff',
-  };
+  // Google's colors, plus theme colors read from the page so dark mode works.
+  // Same warm gradient family as the page.
+  const css = getComputedStyle(document.documentElement);
+  const tv = (n, d) => css.getPropertyValue(n).trim() || d;
+  const C = { orange: tv('--c1', '#fa7e1e'), pink: tv('--accent', '#d62976'), purple: tv('--c3', '#962fbf'), gold: '#fbbc04', bad: '#2b2b33', red: '#e53935' };
+  const PARTY = [C.orange, C.pink, C.purple, C.gold];
+  const FILE_COLORS = [C.orange, C.pink, C.purple];
+  let T = {};
+  function readTheme() {
+    const st = getComputedStyle(document.documentElement);
+    const v = (n) => st.getPropertyValue(n).trim();
+    T = { ink: v('--ink'), dots: v('--line-dash'), surface: v('--surface') };
+  }
+  readTheme();
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { readTheme(); draw(); });
 
   let W = 0;
   let H = 0;
@@ -36,7 +47,6 @@ function init() {
   let items = [];
   let particles = [];
   let popups = [];
-  let stars = [];
   let score = 0;
   let lives = START_LIVES;
   let combo = 0;
@@ -65,24 +75,14 @@ function init() {
     phone.h = phone.w * 1.35;
     phone.x = clamp(phone.x || W / 2, phone.w / 2, W - phone.w / 2);
     phone.target = phone.x;
-    stars = Array.from({ length: Math.round((W * H) / 5000) }, () => ({
-      x: Math.random() * W, y: Math.random() * H, z: 0.3 + Math.random() * 0.7, tw: Math.random() * 6,
-    }));
     if (state !== 'playing') draw();
   }
 
   resize();
   new ResizeObserver(resize).observe(stage);
 
-  // Gentle idle animation of the stars behind the start screen.
   let idleRaf = 0;
-  function idleLoop(now) {
-    if (state === 'playing') return;
-    for (const s of stars) { s.y += s.z * 0.25; if (s.y > H) s.y = 0; s.tw += 0.03; }
-    draw(now);
-    idleRaf = requestAnimationFrame(idleLoop);
-  }
-  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) idleRaf = requestAnimationFrame(idleLoop);
+  function idleLoop() {} // calm start screen: no background animation while idle
 
   // ---------- Game flow ----------
 
@@ -168,6 +168,7 @@ function init() {
       h: size * 1.18,
       vy: (115 + Math.random() * 55) * (1 + level() * 0.75),
       label: LABELS[Math.floor(Math.random() * LABELS.length)],
+      color: FILE_COLORS[Math.floor(Math.random() * FILE_COLORS.length)],
       spin: (Math.random() - 0.5) * 0.5,
       age: 0,
     });
@@ -183,7 +184,6 @@ function init() {
     phone.x += (phone.target - phone.x) * Math.min(1, dt * 18);
     phone.glow = Math.max(0, phone.glow - dt * 3);
 
-    for (const s of stars) { s.y += s.z * (40 + level() * 60) * dt; if (s.y > H) { s.y = 0; s.x = Math.random() * W; } s.tw += dt * 3; }
 
     spawnIn -= dt;
     if (spawnIn <= 0) {
@@ -224,7 +224,7 @@ function init() {
     for (let i = 0; i < n; i++) {
       const a = Math.random() * Math.PI * 2;
       const v = 90 + Math.random() * 220;
-      particles.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 140, life: 0.5 + Math.random() * 0.5, color, size: 2 + Math.random() * 3 });
+      particles.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 140, life: 0.5 + Math.random() * 0.5, color: color || PARTY[i % 4], size: 2 + Math.random() * 3 });
     }
   }
 
@@ -238,9 +238,9 @@ function init() {
     const pts = (it.kind === 'bonus' ? 5 : 1) * multiplier();
     score += pts;
     phone.glow = 1;
-    burst(it.x, it.y, it.kind === 'bonus' ? C.gold : C.cyan, it.kind === 'bonus' ? 32 : 16);
+    burst(it.x, it.y, it.kind === 'bonus' ? null : it.color, it.kind === 'bonus' ? 32 : 16);
     const comboText = combo === 5 ? '  Combo x2!' : combo === 10 ? '  Combo x3!' : '';
-    popups.push({ x: it.x, y: it.y, text: `+${pts}${comboText}`, t: 0.9, color: it.kind === 'bonus' ? C.gold : C.cyan });
+    popups.push({ x: it.x, y: it.y, text: `+${pts}${comboText}`, t: 0.9, color: it.kind === 'bonus' ? '#b06000' : it.color });
     updateHud();
   }
 
@@ -269,62 +269,56 @@ function init() {
   function draw(now = performance.now()) {
     ctx.clearRect(0, 0, W, H);
 
-    // Stars
-    for (const s of stars) {
-      ctx.globalAlpha = (0.35 + 0.45 * Math.abs(Math.sin(s.tw))) * s.z;
-      ctx.fillStyle = s.z > 0.8 ? C.cyan : C.white;
-      ctx.fillRect(s.x, s.y, s.z * 2, s.z * 2);
+    // Soft dot grid, gently drifting down
+    ctx.fillStyle = T.dots;
+    const gap = 28;
+    const shift = (elapsed * 18) % gap;
+    for (let x = gap / 2; x < W; x += gap) {
+      for (let y = -gap + shift; y < H; y += gap) ctx.fillRect(x - 1.5, y - 1.5, 3, 3);
     }
-    ctx.globalAlpha = 1;
-
-    // Glowing floor line
-    const floor = ctx.createLinearGradient(0, 0, W, 0);
-    floor.addColorStop(0, 'rgba(99,102,241,0)');
-    floor.addColorStop(0.5, 'rgba(139,92,246,.7)');
-    floor.addColorStop(1, 'rgba(34,211,238,0)');
-    ctx.fillStyle = floor;
-    ctx.fillRect(0, H - 2, W, 2);
 
     for (const it of items) drawItem(it, now);
     drawPhone();
 
-    // Particles
+    // Particles in Google colors
     for (const p of particles) {
       ctx.globalAlpha = Math.min(1, p.life * 2);
       ctx.fillStyle = p.color;
-      ctx.shadowColor = p.color;
-      ctx.shadowBlur = 10;
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
       ctx.fill();
     }
-    ctx.shadowBlur = 0;
     ctx.globalAlpha = 1;
 
     // Floating score text
     ctx.textAlign = 'center';
-    ctx.font = '800 20px "Bricolage Grotesque Variable", system-ui, sans-serif';
+    ctx.font = '500 18px Roboto, system-ui, sans-serif';
     for (const p of popups) {
       ctx.globalAlpha = Math.min(1, p.t * 2);
       ctx.fillStyle = p.color;
-      ctx.shadowColor = p.color;
-      ctx.shadowBlur = 14;
-      ctx.fillText(p.text, p.x, p.y);
+      // Keep the text fully inside the game area, even for catches at the edges.
+      const half = ctx.measureText(p.text).width / 2 + 8;
+      ctx.fillText(p.text, clamp(p.x, half, W - half), p.y);
     }
-    ctx.shadowBlur = 0;
     ctx.globalAlpha = 1;
 
-    // Combo meter
+    // Combo chip in the corner
     if (state === 'playing' && combo >= 2) {
+      const label = `${combo} in a row${multiplier() > 1 ? `  x${multiplier()}` : ''}`;
+      ctx.font = '500 14px Roboto, system-ui, sans-serif';
+      const tw = ctx.measureText(label).width;
+      ctx.fillStyle = multiplier() > 1 ? C.gold : T.surface;
+      ctx.beginPath();
+      ctx.roundRect(14, 14, tw + 24, 30, 15);
+      ctx.fill();
+      ctx.fillStyle = multiplier() > 1 ? '#3c2a00' : T.ink;
       ctx.textAlign = 'left';
-      ctx.font = '800 16px "Bricolage Grotesque Variable", system-ui, sans-serif';
-      ctx.fillStyle = multiplier() > 1 ? C.gold : C.violet;
-      ctx.fillText(`${combo} in a row${multiplier() > 1 ? `  x${multiplier()}` : ''}`, 18, 30);
+      ctx.fillText(label, 26, 34);
     }
 
     if (flash > 0) {
       ctx.fillStyle = C.red;
-      ctx.globalAlpha = flash * 0.18;
+      ctx.globalAlpha = flash * 0.12;
       ctx.fillRect(0, 0, W, H);
       ctx.globalAlpha = 1;
     }
@@ -332,68 +326,58 @@ function init() {
 
   function sheet(x, y, w, h, fold) {
     ctx.beginPath();
-    ctx.moveTo(x + 7, y);
+    ctx.moveTo(x + 6, y);
     ctx.lineTo(x + w - fold, y);
     ctx.lineTo(x + w, y + fold);
-    ctx.lineTo(x + w, y + h - 7);
-    ctx.quadraticCurveTo(x + w, y + h, x + w - 7, y + h);
-    ctx.lineTo(x + 7, y + h);
-    ctx.quadraticCurveTo(x, y + h, x, y + h - 7);
-    ctx.lineTo(x, y + 7);
-    ctx.quadraticCurveTo(x, y, x + 7, y);
+    ctx.lineTo(x + w, y + h - 6);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - 6, y + h);
+    ctx.lineTo(x + 6, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - 6);
+    ctx.lineTo(x, y + 6);
+    ctx.quadraticCurveTo(x, y, x + 6, y);
     ctx.closePath();
   }
 
-  function drawItem(it, now) {
+  function drawItem(it) {
     const { w, h } = it;
     ctx.save();
     ctx.translate(it.x, it.y);
-    ctx.rotate(Math.sin(it.age * 3 + it.spin * 10) * it.spin * 0.35);
+    ctx.rotate(Math.sin(it.age * 3 + it.spin * 10) * it.spin * 0.3);
     const x = -w / 2;
     const y = -h / 2;
     const fold = w * 0.3;
+    const color = it.kind === 'bad' ? C.bad : it.kind === 'bonus' ? C.gold : it.color;
 
-    const [c1, c2, glow] = it.kind === 'bad'
-      ? ['#fb7185', '#e11d48', C.red]
-      : it.kind === 'bonus'
-        ? ['#fde68a', '#f59e0b', C.gold]
-        : ['#a78bfa', '#3b82f6', C.indigo];
-    const g = ctx.createLinearGradient(x, y, x + w, y + h);
-    g.addColorStop(0, c1);
-    g.addColorStop(1, c2);
-
-    ctx.shadowColor = glow;
-    ctx.shadowBlur = it.kind === 'bonus' ? 26 + Math.sin(now / 120) * 8 : 18;
+    // Soft paper shadow, like a Material card
+    ctx.shadowColor = 'rgba(60,64,67,.3)';
+    ctx.shadowBlur = 6;
+    ctx.shadowOffsetY = 2;
     sheet(x, y, w, h, fold);
-    ctx.fillStyle = g;
+    ctx.fillStyle = color;
     ctx.fill();
-    ctx.shadowBlur = 0;
-
-    ctx.strokeStyle = 'rgba(255,255,255,.35)';
-    ctx.lineWidth = 1;
-    ctx.stroke();
+    ctx.shadowColor = 'transparent';
 
     ctx.beginPath();
     ctx.moveTo(x + w - fold, y);
     ctx.lineTo(x + w - fold, y + fold);
     ctx.lineTo(x + w, y + fold);
     ctx.closePath();
-    ctx.fillStyle = 'rgba(255,255,255,.4)';
+    ctx.fillStyle = 'rgba(255,255,255,.45)';
     ctx.fill();
 
     if (it.kind === 'bonus') {
       const s = w * 0.22;
       for (const [dx, dy] of [[0.16, 0.36], [0.56, 0.36], [0.16, 0.7]]) {
-        ctx.fillStyle = '#1c1300';
+        ctx.fillStyle = '#3c2a00';
         ctx.fillRect(x + w * dx, y + h * dy - s / 2, s, s);
-        ctx.fillStyle = '#fde68a';
+        ctx.fillStyle = C.gold;
         ctx.fillRect(x + w * dx + s * 0.3, y + h * dy - s * 0.2, s * 0.4, s * 0.4);
       }
-      ctx.fillStyle = '#1c1300';
+      ctx.fillStyle = '#3c2a00';
       ctx.fillRect(x + w * 0.6, y + h * 0.66, s * 0.45, s * 0.45);
     } else if (it.kind === 'bad') {
-      ctx.strokeStyle = '#fff';
-      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = C.red;
+      ctx.lineWidth = 3;
       ctx.lineJoin = 'round';
       ctx.beginPath();
       ctx.moveTo(x + w * 0.2, y + h * 0.3);
@@ -401,15 +385,15 @@ function init() {
       ctx.lineTo(x + w * 0.35, y + h * 0.58);
       ctx.lineTo(x + w * 0.62, y + h * 0.78);
       ctx.stroke();
-      ctx.font = `800 ${Math.round(w * 0.34)}px system-ui, sans-serif`;
-      ctx.fillStyle = '#fff';
+      ctx.font = `700 ${Math.round(w * 0.34)}px Roboto, system-ui, sans-serif`;
+      ctx.fillStyle = C.red;
       ctx.textAlign = 'center';
       ctx.fillText('!', x + w * 0.74, y + h * 0.52);
     } else {
       ctx.fillStyle = '#fff';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.font = `700 ${Math.round(w * 0.27)}px "Atkinson Hyperlegible", system-ui, sans-serif`;
+      ctx.font = `500 ${Math.round(w * 0.27)}px Roboto, system-ui, sans-serif`;
       ctx.fillText(it.label, x + w / 2, y + h * 0.62);
       ctx.textBaseline = 'alphabetic';
     }
@@ -421,55 +405,45 @@ function init() {
     const x = phone.x - w / 2;
     const y = H - h - 10;
 
-    // Body with a gradient neon rim
-    const rim = ctx.createLinearGradient(x, y, x + w, y + h);
-    rim.addColorStop(0, C.violet);
-    rim.addColorStop(0.5, C.indigo);
-    rim.addColorStop(1, C.cyan);
-    ctx.shadowColor = phone.glow > 0 ? C.cyan : C.indigo;
-    ctx.shadowBlur = 18 + phone.glow * 30;
+    // Pixel-style phone: dark frame, light screen
+    ctx.shadowColor = 'rgba(60,64,67,.35)';
+    ctx.shadowBlur = 10;
+    ctx.shadowOffsetY = 3;
     ctx.beginPath();
     ctx.roundRect(x, y, w, h + 30, 16);
-    ctx.fillStyle = rim;
+    ctx.fillStyle = '#3c4043';
     ctx.fill();
-    ctx.shadowBlur = 0;
+    ctx.shadowColor = 'transparent';
 
     ctx.beginPath();
     ctx.roundRect(x + 4, y + 4, w - 8, h + 22, 12);
-    ctx.fillStyle = '#0c0a1f';
+    ctx.fillStyle = phone.glow > 0 ? '#ffe8f2' : '#ffffff';
     ctx.fill();
 
-    // Screen glow when catching
-    if (phone.glow > 0) {
-      ctx.globalAlpha = phone.glow * 0.5;
-      ctx.fillStyle = C.cyan;
-      ctx.beginPath();
-      ctx.roundRect(x + 4, y + 4, w - 8, h + 22, 12);
-      ctx.fill();
-      ctx.globalAlpha = 1;
-    }
-
+    // Camera dot
     ctx.beginPath();
-    ctx.roundRect(phone.x - w * 0.14, y + 10, w * 0.28, 6, 3);
-    ctx.fillStyle = 'rgba(255,255,255,.25)';
+    ctx.arc(phone.x, y + 12, 3, 0, Math.PI * 2);
+    ctx.fillStyle = '#3c4043';
     ctx.fill();
 
-    // Download arrow on screen
-    ctx.strokeStyle = C.cyan;
-    ctx.shadowColor = C.cyan;
-    ctx.shadowBlur = 10;
+    // Download icon in a blue circle; turns green on a catch
+    const cy = y + h * 0.52;
+    ctx.beginPath();
+    ctx.arc(phone.x, cy, w * 0.26, 0, Math.PI * 2);
+    ctx.fillStyle = phone.glow > 0 ? C.orange : C.pink;
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
     ctx.lineWidth = 3;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    const cy = y + h * 0.5;
+    const a = w * 0.12;
     ctx.beginPath();
-    ctx.moveTo(phone.x, cy - 14);
-    ctx.lineTo(phone.x, cy + 10);
-    ctx.moveTo(phone.x - 10, cy);
-    ctx.lineTo(phone.x, cy + 10);
-    ctx.lineTo(phone.x + 10, cy);
+    ctx.moveTo(phone.x, cy - a);
+    ctx.lineTo(phone.x, cy + a * 0.8);
+    ctx.moveTo(phone.x - a * 0.75, cy + a * 0.05);
+    ctx.lineTo(phone.x, cy + a * 0.8);
+    ctx.lineTo(phone.x + a * 0.75, cy + a * 0.05);
     ctx.stroke();
-    ctx.shadowBlur = 0;
   }
 
   // ---------- Controls ----------

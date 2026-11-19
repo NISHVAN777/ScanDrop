@@ -3,252 +3,461 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ScanDrop: hand over files with a scan</title>
-  <meta name="description" content="Drop a file, show the QR code, and the other phone downloads it. No app, no account.">
+  <title>ScanDrop: share any file in one scan</title>
+  <meta name="description" content="Pick a file, show the QR code, and the other phone downloads it. End-to-end encrypted, no app and no account.">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/vendor/fonts/bricolage/standard.css">
-  <link rel="stylesheet" href="/vendor/fonts/atkinson/400.css">
-  <link rel="stylesheet" href="/vendor/fonts/atkinson/700.css">
+  <link rel="stylesheet" href="/vendor/fonts/roboto/400.css">
+  <link rel="stylesheet" href="/vendor/fonts/roboto/500.css">
+  <link rel="stylesheet" href="/vendor/fonts/roboto/700.css">
   <link rel="stylesheet" href="/css/style.css">
 </head>
-<body>
-  <header class="site-header">
-    <a class="brand" href="/" aria-label="ScanDrop home">
-      <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true">
-        <rect x="2" y="2" width="9" height="9" rx="2"/><rect x="13" y="2" width="9" height="9" rx="2"/><rect x="2" y="13" width="9" height="9" rx="2"/>
-        <rect class="brand-drop" x="15" y="15" width="5" height="5" rx="1"/>
+<body class="site">
+  <a class="skip-link" href="#send">Skip to sending a file</a>
+
+  <header class="nav" id="top">
+    <div class="nav-inner">
+      <a class="brand" href="/" aria-label="ScanDrop home">
+      <svg class="brand-mark" viewBox="0 0 36 36" aria-hidden="true">
+        <defs>
+          <linearGradient id="sdRing" x1="0" y1="1" x2="1" y2="0">
+            <stop class="s1" offset="0"/><stop class="s2" offset=".5"/><stop class="s3" offset="1"/>
+          </linearGradient>
+        </defs>
+        <rect x="1" y="1" width="34" height="34" rx="10" fill="#fff"/>
+        <circle cx="18" cy="18" r="8.5" fill="none" stroke="url(#sdRing)" stroke-width="4"/>
+        <circle class="dot" cx="27" cy="9" r="2.2"/>
       </svg>
-      ScanDrop
+      <span class="brand-name">ScanDrop</span>
     </a>
-    <span class="header-pill"><span class="dot" aria-hidden="true"></span>Free, private, no sign-up</span>
+      <nav class="nav-links" id="navLinks" aria-label="Main">
+        <a href="#features">Features</a>
+        <a href="#how">How it works</a>
+        <a href="#security">Security</a>
+        <a href="#faq">FAQ</a>
+        <a href="#play">Game</a>
+      </nav>
+      <a class="btn btn-primary nav-cta" href="#send">Send a file</a>
+      <button class="nav-toggle" id="navToggle" type="button" aria-expanded="false" aria-controls="navLinks" aria-label="Open menu">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+      </button>
+    </div>
   </header>
 
-  <main class="home">
-    <section class="hero">
-      <div class="hero-badges">
-        <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>End-to-end encrypted</span>
-        <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L3 14h9l-1 8 10-12h-9z"/></svg>Direct device to device</span>
-        <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Self-deleting files</span>
+  <!-- Hero -->
+  <section class="hero-band">
+    <div class="hero-grid">
+      <div class="hero">
+        <p class="eyebrow-pill"><svg class="pill-ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18 8h-1V6A5 5 0 0 0 7 6v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2zm-6 9a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm3.1-9H8.9V6a3.1 3.1 0 0 1 6.2 0v2z"/></svg> Free, private and encrypted</p>
+        <h1 class="hero-title">Share any file in one scan</h1>
+        <p class="hero-lede">Pick a file, show the QR code, and the other phone downloads it. No app, no account, no cables.</p>
+        <div class="hero-actions">
+          <a class="btn btn-white btn-lg" href="#send">Send a file now</a>
+          <a class="btn btn-outline-white btn-lg" href="#how">See how it works</a>
+        </div>
+        <dl class="stats">
+          <div><dt>Per upload</dt><dd>2 GB</dd></div>
+          <div><dt>Sending directly</dt><dd>No limit</dd></div>
+          <div><dt>Encryption</dt><dd>AES-256</dd></div>
+        </dl>
       </div>
-      <h1 class="hero-title">Hand a file to anyone nearby. They just scan.</h1>
-      <p class="hero-lede">Drop a file, show the code, and the other phone downloads it. No app, no account, and the file deletes itself when you're done.</p>
-      <ol class="how">
-        <li><span class="how-n" aria-hidden="true">1</span><span><b>Drop a file</b>Any type, up to 2 GB, or any size when sending directly.</span></li>
-        <li><span class="how-n" aria-hidden="true">2</span><span><b>Show the code</b>On your screen, or share it as an image.</span></li>
-        <li><span class="how-n" aria-hidden="true">3</span><span><b>They scan it</b>Any phone camera opens the download.</span></li>
-      </ol>
-    </section>
-
-    <div class="panel">
-      <!-- Pick a file -->
-      <section id="pick" class="card">
-        <div class="card-head">
-          <h2>Send a file</h2>
-        </div>
-        <div class="tabs" role="tablist" aria-label="How to send">
-          <button id="modeUpload" class="tab active" type="button" role="tab" aria-selected="true">Upload &amp; share</button>
-          <button id="modeDirect" class="tab" type="button" role="tab" aria-selected="false">Send directly</button>
-        </div>
-        <p class="muted small mode-help" id="limitText">The file waits safely on the server, so they can download it later.</p>
-        <p class="muted small mode-help hidden" id="directText">Device to device. Nothing is stored and there's no size limit, but keep this page open until they have it.</p>
-
-        <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="Choose a file to send">
-          <span class="vf vf-tl" aria-hidden="true"></span><span class="vf vf-tr" aria-hidden="true"></span>
-          <span class="vf vf-bl" aria-hidden="true"></span><span class="vf vf-br" aria-hidden="true"></span>
-          <span class="drop-orb" aria-hidden="true">
-            <svg class="drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 15V3M7 8l5-5 5 5"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/>
-            </svg>
-          </span>
-          <strong class="for-mouse">Drop a file here</strong>
-          <span class="muted small for-mouse">or click to choose one</span>
-          <strong class="for-touch">Tap to choose a file</strong>
-          <span class="muted small for-touch">Photos, videos, documents, anything</span>
-        </div>
-        <input id="fileInput" type="file" class="hidden">
-
-        <div id="selected" class="hidden">
-          <div class="file-pill">
-            <svg class="file-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>
-            <div class="meta">
-              <div class="name" id="selName"></div>
-              <div class="muted small" id="selSize"></div>
+      <div class="hero-app" id="send">
+        <div class="panel">
+          <!-- Pick a file -->
+          <section id="pick" class="card">
+            <div class="tabs" role="tablist" aria-label="How to send">
+              <button id="modeUpload" class="tab active" type="button" role="tab" aria-selected="true">Upload &amp; share</button>
+              <button id="modeDirect" class="tab" type="button" role="tab" aria-selected="false">Send directly</button>
             </div>
-            <button class="icon-btn" id="clearBtn" type="button" aria-label="Remove file">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
-            </button>
-          </div>
+            <p class="muted small mode-help" id="limitText">The file waits safely on the server, so they can download it later.</p>
+            <p class="muted small mode-help hidden" id="directText">Device to device. Nothing is stored and there's no size limit, but keep this page open until they have it.</p>
 
-          <div id="uploadOptions">
-            <div class="options">
-              <label class="field">Delete after
-                <select id="expiry">
-                  <option value="10m">10 minutes</option>
-                  <option value="1h">1 hour</option>
-                  <option value="24h" selected>24 hours</option>
-                  <option value="7d">7 days</option>
-                </select>
-              </label>
-              <label class="field">Download limit
-                <select id="maxDownloads">
-                  <option value="1">1 download</option>
-                  <option value="5">5 downloads</option>
-                  <option value="10">10 downloads</option>
-                  <option value="0" selected>Unlimited</option>
-                </select>
-              </label>
+            <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="Choose a file to send">
+              <span class="drop-orb" aria-hidden="true">
+                <svg class="drop-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
+              </span>
+              <strong class="for-mouse">Drag a file here</strong>
+              <span class="muted small for-mouse">or</span>
+              <span class="drop-cta for-mouse">Browse files</span>
+              <strong class="for-touch">Choose a file to share</strong>
+              <span class="drop-cta for-touch">Browse files</span>
+            </div>
+            <input id="fileInput" type="file" class="hidden">
+
+            <div id="selected" class="hidden">
+              <div class="file-pill">
+                <svg class="file-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13z"/></svg>
+                <div class="meta">
+                  <div class="name" id="selName"></div>
+                  <div class="muted small" id="selSize"></div>
+                </div>
+                <button class="icon-btn" id="clearBtn" type="button" aria-label="Remove file">
+                  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                </button>
+              </div>
+
+              <div id="uploadOptions">
+                <div class="options">
+                  <label class="field">Delete after
+                    <select id="expiry">
+                      <option value="10m">10 minutes</option>
+                      <option value="1h">1 hour</option>
+                      <option value="24h" selected>24 hours</option>
+                      <option value="7d">7 days</option>
+                    </select>
+                  </label>
+                  <label class="field">Download limit
+                    <select id="maxDownloads">
+                      <option value="1">1 download</option>
+                      <option value="5">5 downloads</option>
+                      <option value="10">10 downloads</option>
+                      <option value="0" selected>Unlimited</option>
+                    </select>
+                  </label>
+                </div>
+
+                <div class="toggles">
+                  <label class="switch">
+                    <input id="e2eToggle" type="checkbox" checked>
+                    <span class="switch-track" aria-hidden="true"></span>
+                    <span><b>End-to-end encryption</b><span class="muted small">Only people with the code can open the file.</span></span>
+                  </label>
+                  <label class="switch">
+                    <input id="pinToggle" type="checkbox">
+                    <span class="switch-track" aria-hidden="true"></span>
+                    <span><b>Require a PIN</b><span class="muted small">You tell them the PIN. It isn't in the code.</span></span>
+                  </label>
+                  <div id="pinRow" class="hidden">
+                    <input id="pin" class="pin-input" type="text" inputmode="numeric" autocomplete="off"
+                           maxlength="8" placeholder="Enter 4 to 8 digits" aria-label="PIN">
+                  </div>
+                </div>
+              </div>
+
+              <button id="uploadBtn" class="btn btn-primary btn-block btn-lg" type="button">Create QR code</button>
             </div>
 
-            <div class="toggles">
-              <label class="switch">
-                <input id="e2eToggle" type="checkbox" checked>
-                <span class="switch-track" aria-hidden="true"></span>
-                <span><b>End-to-end encrypt</b><span class="muted small">Only people with the code can open it. Not even the server can.</span></span>
-              </label>
-              <label class="switch">
-                <input id="pinToggle" type="checkbox">
-                <span class="switch-track" aria-hidden="true"></span>
-                <span><b>Require a PIN</b><span class="muted small">You tell them the PIN yourself. It isn't in the code.</span></span>
-              </label>
-              <div id="pinRow" class="hidden">
-                <input id="pin" class="pin-input" type="text" inputmode="numeric" autocomplete="off"
-                       maxlength="8" placeholder="4 to 8 digits" aria-label="PIN">
+            <div id="pickError" class="alert hidden" role="alert"></div>
+          </section>
+
+          <!-- Uploading -->
+          <section id="uploading" class="card hidden" aria-live="polite">
+            <h2 id="upTitle">Uploading…</h2>
+            <p class="muted small" id="upName"></p>
+            <div class="progress"><div id="bar"></div></div>
+            <div class="progress-stats">
+              <span id="upPercent">0%</span>
+              <span id="upStats"></span>
+            </div>
+            <p class="muted small" id="upNote"></p>
+            <div class="row">
+              <button id="pauseBtn" class="btn btn-tonal" type="button">Pause</button>
+              <button id="cancelBtn" class="btn btn-ghost" type="button">Cancel</button>
+            </div>
+          </section>
+
+          <!-- Ready to scan (upload) -->
+          <section id="done" class="ticket hidden">
+            <div class="ticket-top">
+              <h2>Ready to scan</h2>
+              <p class="muted small">Point any phone camera at the code.</p>
+              <div class="qr-wrap"><img id="qr" alt="QR code linking to the file"></div>
+            </div>
+            <div class="perf" aria-hidden="true"></div>
+            <div class="ticket-bottom">
+              <div class="link-box">
+                <input id="shareLink" type="text" readonly aria-label="Share link">
+                <button id="copyBtn" class="btn btn-tonal" type="button">Copy</button>
+              </div>
+              <div class="share-row">
+                <button id="qShareBtn" class="btn btn-primary" type="button">
+                  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11A2.99 2.99 0 0 0 21 5a3 3 0 1 0-5.91.7L8.04 9.81A2.99 2.99 0 0 0 3 12a2.99 2.99 0 0 0 5.04 2.19l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg>
+                  Share
+                </button>
+                <button id="qSaveQrBtn" class="btn btn-tonal" type="button">
+                  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                  Save image
+                </button>
+              </div>
+              <div id="qShareMenu" class="share-menu hidden" role="menu"></div>
+              <p class="muted share-note">Anyone with this code or link can get the file.</p>
+
+              <dl class="facts">
+                <dt>File</dt><dd id="doneName"></dd>
+                <dt>Size</dt><dd id="doneSize"></dd>
+                <dt>Expires</dt><dd id="doneExpiry"></dd>
+                <dt>Downloads</dt><dd id="doneDownloads"></dd>
+                <dt>PIN</dt><dd id="donePin"></dd>
+                <dt>Encryption</dt><dd id="doneE2e"></dd>
+              </dl>
+
+              <div class="row">
+                <button id="newBtn" class="btn btn-primary" type="button">Send another</button>
+                <button id="deleteBtn" class="btn btn-ghost btn-danger" type="button">Delete now</button>
               </div>
             </div>
-          </div>
+          </section>
 
-          <button id="uploadBtn" class="btn btn-primary btn-block btn-lg" type="button">Create QR code</button>
+          <!-- Ready to scan (direct) -->
+          <section id="direct" class="ticket hidden" aria-live="polite">
+            <div class="ticket-top">
+              <h2 id="dTitle">Waiting for someone to scan…</h2>
+              <p class="muted small" id="dSub">Keep this page open. The file goes straight to their device.</p>
+              <div class="qr-wrap"><img id="dQr" alt="QR code for direct transfer"></div>
+            </div>
+            <div class="perf" aria-hidden="true"></div>
+            <div class="ticket-bottom">
+              <div class="link-box">
+                <input id="dLink" type="text" readonly aria-label="Direct transfer link">
+                <button id="dCopyBtn" class="btn btn-tonal" type="button">Copy</button>
+              </div>
+              <div class="share-row">
+                <button id="dShareBtn" class="btn btn-primary" type="button">
+                  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11A2.99 2.99 0 0 0 21 5a3 3 0 1 0-5.91.7L8.04 9.81A2.99 2.99 0 0 0 3 12a2.99 2.99 0 0 0 5.04 2.19l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg>
+                  Share
+                </button>
+                <button id="dSaveQrBtn" class="btn btn-tonal" type="button">
+                  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                  Save image
+                </button>
+              </div>
+              <div id="dShareMenu" class="share-menu hidden" role="menu"></div>
+              <p class="muted share-note">Anyone with this code or link can get the file.</p>
+
+              <div id="dProgressBox" class="hidden">
+                <div class="progress"><div id="dBar"></div></div>
+                <div class="progress-stats"><span id="dPercent"></span><span id="dStats"></span></div>
+              </div>
+              <dl class="facts">
+                <dt>File</dt><dd id="dName"></dd>
+                <dt>Size</dt><dd id="dSize"></dd>
+                <dt>Sent to</dt><dd id="dCount">0 people</dd>
+              </dl>
+              <button id="dStopBtn" class="btn btn-ghost btn-block" type="button">Stop sharing</button>
+            </div>
+          </section>
         </div>
-
-        <div id="pickError" class="alert hidden" role="alert"></div>
-      </section>
-
-      <!-- Uploading -->
-      <section id="uploading" class="card hidden" aria-live="polite">
-        <h2 id="upTitle">Uploading…</h2>
-        <p class="muted small" id="upName"></p>
-        <div class="progress"><div id="bar"></div></div>
-        <div class="progress-stats">
-          <span id="upPercent">0%</span>
-          <span id="upStats"></span>
-        </div>
-        <p class="muted small" id="upNote"></p>
-        <div class="row">
-          <button id="pauseBtn" class="btn btn-ghost" type="button">Pause</button>
-          <button id="cancelBtn" class="btn btn-ghost" type="button">Cancel</button>
-        </div>
-      </section>
-
-      <!-- Ready to scan (upload) -->
-      <section id="done" class="ticket hidden">
-        <div class="ticket-top">
-          <h2>Ready to scan</h2>
-          <p class="muted small">Point any phone camera at the code.</p>
-          <div class="qr-wrap"><img id="qr" alt="QR code linking to the file"></div>
-        </div>
-        <div class="perf" aria-hidden="true"></div>
-        <div class="ticket-bottom">
-          <div class="link-box">
-            <input id="shareLink" type="text" readonly aria-label="Share link">
-            <button id="copyBtn" class="btn btn-ghost" type="button">Copy</button>
-          </div>
-          <div class="share-row">
-            <button id="qShareBtn" class="btn btn-primary" type="button">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>
-              Share
-            </button>
-            <button id="qSaveQrBtn" class="btn btn-ghost" type="button">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M5 20h14"/></svg>
-              Save image
-            </button>
-          </div>
-          <div id="qShareMenu" class="share-menu hidden" role="menu"></div>
-          <p class="muted small share-note">Anyone with this code or link can get the file.</p>
-
-          <dl class="facts">
-            <dt>File</dt><dd id="doneName"></dd>
-            <dt>Size</dt><dd id="doneSize"></dd>
-            <dt>Expires</dt><dd id="doneExpiry"></dd>
-            <dt>Downloads</dt><dd id="doneDownloads"></dd>
-            <dt>PIN</dt><dd id="donePin"></dd>
-            <dt>Encryption</dt><dd id="doneE2e"></dd>
-          </dl>
-
-          <div class="row">
-            <button id="newBtn" class="btn btn-primary" type="button">Send another</button>
-            <button id="deleteBtn" class="btn btn-ghost btn-danger" type="button">Delete now</button>
-          </div>
-        </div>
-      </section>
-
-      <!-- Ready to scan (direct) -->
-      <section id="direct" class="ticket hidden" aria-live="polite">
-        <div class="ticket-top">
-          <h2 id="dTitle">Waiting for someone to scan…</h2>
-          <p class="muted small" id="dSub">Keep this page open. The file goes straight to their device.</p>
-          <div class="qr-wrap"><img id="dQr" alt="QR code for direct transfer"></div>
-        </div>
-        <div class="perf" aria-hidden="true"></div>
-        <div class="ticket-bottom">
-          <div class="link-box">
-            <input id="dLink" type="text" readonly aria-label="Direct transfer link">
-            <button id="dCopyBtn" class="btn btn-ghost" type="button">Copy</button>
-          </div>
-          <div class="share-row">
-            <button id="dShareBtn" class="btn btn-primary" type="button">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>
-              Share
-            </button>
-            <button id="dSaveQrBtn" class="btn btn-ghost" type="button">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M5 20h14"/></svg>
-              Save image
-            </button>
-          </div>
-          <div id="dShareMenu" class="share-menu hidden" role="menu"></div>
-          <p class="muted small share-note">Anyone with this code or link can get the file.</p>
-
-          <div id="dProgressBox" class="hidden">
-            <div class="progress"><div id="dBar"></div></div>
-            <div class="progress-stats"><span id="dPercent"></span><span id="dStats"></span></div>
-          </div>
-          <dl class="facts">
-            <dt>File</dt><dd id="dName"></dd>
-            <dt>Size</dt><dd id="dSize"></dd>
-            <dt>Sent to</dt><dd id="dCount">0 people</dd>
-          </dl>
-          <button id="dStopBtn" class="btn btn-ghost btn-block" type="button">Stop sharing</button>
-        </div>
-      </section>
-    </div>
-  </main>
-
-  <!-- Mini game -->
-  <section class="arcade reveal" aria-labelledby="gameTitle">
-    <div class="arcade-head">
-      <div>
-        <h2 id="gameTitle">Catch the drop</h2>
-        <p class="muted">Files are falling. Catch them with your phone, dodge the broken ones, and chain catches for a combo.</p>
-      </div>
-      <dl class="scoreboard">
-        <div><dt>Score</dt><dd id="gScore">0</dd></div>
-        <div><dt>Best</dt><dd id="gBest">0</dd></div>
-        <div><dt>Lives</dt><dd id="gLives" aria-label="3 lives">3</dd></div>
-      </dl>
-    </div>
-    <div class="arcade-stage" id="gameStage">
-      <canvas id="gameCanvas" aria-label="Catch the drop game area"></canvas>
-      <div id="gameOverlay" class="game-overlay">
-        <p class="game-msg" id="gameMsg">Catch files to score. Missing a file or catching a broken one costs a life.</p>
-        <button id="gameStart" class="btn btn-primary btn-lg" type="button">Play</button>
-        <p class="muted small for-mouse">Move with your mouse or the ← → keys. Press Space to pause.</p>
-        <p class="muted small for-touch">Drag your finger across the game to move your phone.</p>
       </div>
     </div>
   </section>
 
-  <footer class="site-footer">
-    <span>ScanDrop</span>
-    <span>Files delete themselves. Encrypted links keep their key out of our hands.</span>
+  <main>
+    <!-- Features -->
+    <section class="section" id="features" aria-labelledby="featuresTitle">
+      <div class="section-head">
+        <h2 id="featuresTitle">Everything you need to share files safely</h2>
+        <p>Built for quick handovers between phones, laptops and friends, without giving up your privacy.</p>
+      </div>
+      <div class="feature-grid">
+        <article class="feature">
+          <span class="feature-icon"><svg class="ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18 8h-1V6A5 5 0 0 0 7 6v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2zm-6 9a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm3.1-9H8.9V6a3.1 3.1 0 0 1 6.2 0v2z"/></svg></span>
+          <h3>End-to-end encryption</h3>
+          <p>Files are locked in your browser before they leave. The key lives only in the QR code, so not even our server can open them.</p>
+        </article>
+        <article class="feature">
+          <span class="feature-icon"><svg class="ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg></span>
+          <h3>Direct device to device</h3>
+          <p>Send straight to a nearby phone over Wi-Fi with no upload and no size limit. Great for big videos.</p>
+        </article>
+        <article class="feature">
+          <span class="feature-icon"><svg class="ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M15 1H9v2h6V1zm-4 13h2V8h-2v6zm8.03-6.61 1.42-1.42c-.43-.51-.9-.99-1.41-1.41l-1.42 1.42A8.96 8.96 0 0 0 12 4a9 9 0 1 0 9 9c0-2.12-.74-4.07-1.97-5.61zM12 20a7 7 0 1 1 0-14 7 7 0 0 1 0 14z"/></svg></span>
+          <h3>Links that delete themselves</h3>
+          <p>Choose 10 minutes to 7 days, or a one-time link. When time is up, the file is gone for good.</p>
+        </article>
+        <article class="feature">
+          <span class="feature-icon"><svg class="ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-1 15-4-4 1.41-1.41L11 13.17l6.59-6.59L19 8l-8 8z"/></svg></span>
+          <h3>PIN protection</h3>
+          <p>Add a 4 to 8 digit PIN for extra safety. Five wrong tries locks the file for 10 minutes.</p>
+        </article>
+        <article class="feature">
+          <span class="feature-icon"><svg class="ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 4V1L8 5l4 4V6a6 6 0 1 1-6 6H4a8 8 0 1 0 8-8z"/></svg></span>
+          <h3>Never start over</h3>
+          <p>Big uploads go in small pieces. If the Wi-Fi drops or the tab closes, pick the file again and it continues.</p>
+        </article>
+        <article class="feature">
+          <span class="feature-icon"><svg class="ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11A2.99 2.99 0 0 0 21 5a3 3 0 1 0-5.91.7L8.04 9.81A2.99 2.99 0 0 0 3 12a2.99 2.99 0 0 0 5.04 2.19l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg></span>
+          <h3>Share the code anywhere</h3>
+          <p>Show the QR on screen, or send it as an image on WhatsApp, Telegram, email or SMS.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- How it works -->
+    <section class="section section-tint" id="how" aria-labelledby="howTitle">
+      <div class="section-head">
+        <h2 id="howTitle">How it works</h2>
+        <p>Three steps. Most people are done in under a minute.</p>
+      </div>
+      <ol class="steps">
+        <li class="step">
+          <span class="step-num">1</span>
+          <span class="step-icon"><svg class="ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg></span>
+          <h3>Pick a file</h3>
+          <p>Drag it in or tap Browse files. Photos, videos, documents, anything.</p>
+        </li>
+        <li class="step">
+          <span class="step-num">2</span>
+          <span class="step-icon"><svg class="ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 11h8V3H3v8zm2-6h4v4H5V5zm8-2v8h8V3h-8zm6 6h-4V5h4v4zM3 21h8v-8H3v8zm2-6h4v4H5v-4zm13 2h-2v-2h-2v4h2v2h4v-2h-2zm0-4h2v2h-2zm-4 6h2v2h-2z"/></svg></span>
+          <h3>Show the QR code</h3>
+          <p>Hold it up on your screen, or share it as an image in any chat app.</p>
+        </li>
+        <li class="step">
+          <span class="step-num">3</span>
+          <span class="step-icon"><svg class="ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17 1H7c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-2-2-2zm0 18H7V5h10v14zm-1-6h-3V8h-2v5H8l4 4 4-4z"/></svg></span>
+          <h3>They scan and download</h3>
+          <p>Any phone camera opens the download page. No app needed.</p>
+        </li>
+      </ol>
+
+      <div class="modes">
+        <article class="mode">
+          <span class="mode-icon"><svg class="ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"/></svg></span>
+          <h3>Upload &amp; share</h3>
+          <p>The file waits safely online, so they can download it later.</p>
+          <ul>
+            <li><svg class="tick" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>You can close the page</li>
+            <li><svg class="tick" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>Download later, from anywhere</li>
+            <li><svg class="tick" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>PIN, expiry and download limits</li>
+            <li><svg class="tick" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>Up to 2 GB per file</li>
+          </ul>
+        </article>
+        <article class="mode mode-featured">
+          <span class="mode-badge">Fastest nearby</span>
+          <span class="mode-icon"><svg class="ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4 6h18V4H4c-1.1 0-2 .9-2 2v11H0v3h14v-3H4V6zm19 2h-6c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h6c.55 0 1-.45 1-1V9c0-.55-.45-1-1-1zm-1 9h-4v-7h4v7z"/></svg></span>
+          <h3>Send directly</h3>
+          <p>Straight from your device to theirs. Nothing is stored anywhere.</p>
+          <ul>
+            <li><svg class="tick" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>No size limit</li>
+            <li><svg class="tick" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>Very fast on the same Wi-Fi</li>
+            <li><svg class="tick" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>Several people can receive in turn</li>
+            <li><svg class="tick" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>Keep the page open while sending</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <!-- Security -->
+    <section class="security" id="security" aria-labelledby="securityTitle">
+      <div class="security-inner">
+        <div>
+          <h2 id="securityTitle">Your files stay yours</h2>
+          <p>ScanDrop is designed so that we can't look inside what you share, even if we wanted to.</p>
+        </div>
+        <ul class="security-list">
+          <li><b>Encrypted on your device</b>Every file gets its own random AES-256 key before it uploads.</li>
+          <li><b>The key never reaches us</b>It travels only inside the QR link, in a part browsers never send to servers.</li>
+          <li><b>Even the name is hidden</b>The server only sees a scrambled file called encrypted.bin.</li>
+          <li><b>Gone when you say so</b>Expired and one-time files are deleted automatically.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Game -->
+    <section class="section" id="play" aria-labelledby="gameTitle">
+      <div class="section-head">
+        <h2>Waiting for a file?</h2>
+        <p>Play a quick round of Catch the drop while it uploads.</p>
+      </div>
+      <div class="card arcade-card">
+          <div class="arcade-head">
+            <div>
+              <h2 id="gameTitle">Catch the drop</h2>
+              <p class="muted">Catch files with your phone. Dodge the broken black ones.</p>
+            </div>
+            <dl class="scoreboard">
+              <div><dt>Score</dt><dd id="gScore">0</dd></div>
+              <div><dt>Best</dt><dd id="gBest">0</dd></div>
+              <div><dt>Lives</dt><dd id="gLives" aria-label="3 lives">3</dd></div>
+            </dl>
+          </div>
+          <div class="arcade-stage" id="gameStage">
+            <canvas id="gameCanvas" aria-label="Catch the drop game area"></canvas>
+            <div id="gameOverlay" class="game-overlay">
+              <p class="game-msg" id="gameMsg">Catch files to score. Missing one or catching a broken one costs a life.</p>
+              <button id="gameStart" class="btn btn-primary btn-lg" type="button">Play</button>
+              <p class="muted small for-mouse">Use your mouse or the ← → keys. Press Space to pause.</p>
+              <p class="muted small for-touch">Drag your finger to move your phone.</p>
+            </div>
+          </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="section section-tint" id="faq" aria-labelledby="faqTitle">
+      <div class="section-head">
+        <h2 id="faqTitle">Questions people ask</h2>
+      </div>
+      <div class="faq">
+        <details class="faq-item">
+          <summary>Do I need to install an app or make an account?</summary>
+          <p>No. ScanDrop runs in the browser. The person receiving just points their phone camera at the QR code.</p>
+        </details>
+        <details class="faq-item">
+          <summary>How big can my file be?</summary>
+          <p>Up to 2 GB with Upload &amp; share. With Send directly there is no limit, because the file goes straight from your device to theirs.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Can ScanDrop see my files?</summary>
+          <p>Not when end-to-end encryption is on (it is by default). The file is encrypted on your device and the key is only inside the QR link, which never reaches the server.</p>
+        </details>
+        <details class="faq-item">
+          <summary>How long do files stay online?</summary>
+          <p>You choose: 10 minutes, 1 hour, 24 hours or 7 days, and you can limit the number of downloads. You can also delete a file early.</p>
+        </details>
+        <details class="faq-item">
+          <summary>What if the upload stops halfway?</summary>
+          <p>Nothing is lost. Press Resume, or pick the same file again later, and ScanDrop continues from where it stopped.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Why does Send directly need the page open?</summary>
+          <p>Because the file travels live from your device to theirs. If you close the page, the transfer stops. Use Upload &amp; share if they will download it later.</p>
+        </details>
+      </div>
+    </section>
+
+    <!-- Final call to action -->
+    <section class="cta-band">
+      <h2>Ready to send something?</h2>
+      <p>It takes about ten seconds. No sign-up.</p>
+      <a class="btn btn-white btn-lg" href="#send">Send a file now</a>
+    </section>
+  </main>
+
+  <footer class="site-footer big-footer">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a class="brand" href="/" aria-label="ScanDrop home">
+      <svg class="brand-mark" viewBox="0 0 36 36" aria-hidden="true">
+        <defs>
+          <linearGradient id="sdRing2" x1="0" y1="1" x2="1" y2="0">
+            <stop class="s1" offset="0"/><stop class="s2" offset=".5"/><stop class="s3" offset="1"/>
+          </linearGradient>
+        </defs>
+        <rect x="1" y="1" width="34" height="34" rx="10" fill="#fff"/>
+        <circle cx="18" cy="18" r="8.5" fill="none" stroke="url(#sdRing2)" stroke-width="4"/>
+        <circle class="dot" cx="27" cy="9" r="2.2"/>
+      </svg>
+      <span class="brand-name">ScanDrop</span>
+    </a>
+        <p>Share any file in one scan. Encrypted, private, and gone when you're done.</p>
+      </div>
+      <div>
+        <h4>Product</h4>
+        <a href="#send">Send a file</a>
+        <a href="#features">Features</a>
+        <a href="#how">How it works</a>
+        <a href="#play">Game</a>
+      </div>
+      <div>
+        <h4>Trust</h4>
+        <a href="#security">Security</a>
+        <a href="#faq">FAQ</a>
+      </div>
+      <div>
+        <h4>Project</h4>
+        <a href="https://github.com/NISHVAN777/ScanDrop" target="_blank" rel="noopener noreferrer"><svg class="gh" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2.2c-3.3.7-4-1.4-4-1.4-.5-1.4-1.3-1.8-1.3-1.8-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1.1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-6 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.3 4.7 18.3 5 18.3 5c.6 1.7.2 2.9.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 6 .4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .5z"/></svg> View on GitHub</a>
+      </div>
+    </div>
+    <p class="footer-bottom">ScanDrop. Files delete themselves after they expire.</p>
   </footer>
 
   <script type="module" src="/js/app.js"></script>

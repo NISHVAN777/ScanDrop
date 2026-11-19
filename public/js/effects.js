@@ -37,7 +37,8 @@ if (reduceMotion || !('IntersectionObserver' in window)) {
 }
 
 // ---------- Confetti when a code is ready ----------
-const COLORS = ['#a78bfa', '#6366f1', '#3b82f6', '#22d3ee', '#ec4899', '#f4f3ff'];
+const themeCss = getComputedStyle(document.documentElement);
+const COLORS = ['--c1', '--c2', '--c3', '--accent'].map((n) => themeCss.getPropertyValue(n).trim()).filter(Boolean).concat(['#fbbc04', '#ffffff']);
 
 export function confetti(count = 90) {
   if (reduceMotion) return;
@@ -80,3 +81,31 @@ if (count) {
     last = count.textContent;
   }).observe(count, { childList: true, characterData: true, subtree: true });
 }
+
+// ---------- Site navigation (home page) ----------
+const nav = document.querySelector('header.nav');
+const toggle = document.getElementById('navToggle');
+if (nav && toggle) {
+  const setOpen = (open) => {
+    nav.classList.toggle('open', open);
+    toggle.setAttribute('aria-expanded', String(open));
+    toggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+  };
+  toggle.addEventListener('click', () => setOpen(!nav.classList.contains('open')));
+  // Close the phone menu after picking a link, or when tapping elsewhere / pressing Escape.
+  nav.querySelectorAll('.nav-links a').forEach((a) => a.addEventListener('click', () => setOpen(false)));
+  document.addEventListener('click', (e) => { if (!nav.contains(e.target)) setOpen(false); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setOpen(false); });
+}
+
+// "Send a file" buttons: scroll to the card and put focus on the drop area.
+document.querySelectorAll('a[href="#send"]').forEach((a) => {
+  a.addEventListener('click', (e) => {
+    const target = document.getElementById('send');
+    if (!target) return;
+    e.preventDefault();
+    target.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
+    const drop = document.getElementById('dropzone');
+    if (drop && drop.offsetParent) setTimeout(() => drop.focus({ preventScroll: true }), reduceMotion ? 0 : 450);
+  });
+});
