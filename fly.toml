@@ -24,11 +24,13 @@ kill_timeout = "10s"
 [http_service]
   internal_port = 8080
   force_https = true
-  # Keep one machine always running: direct transfers and uploads in progress
-  # live in memory, and a sleeping machine would cut them off.
-  auto_stop_machines = "off"
+  # Sleep when idle to save money, and wake automatically on the next request.
+  # Fly only puts the machine to sleep when it has no open connections, so a
+  # direct transfer or an upload in progress keeps it awake until it finishes.
+  # "suspend" saves the machine's memory, so waking takes about a second.
+  auto_stop_machines = "suspend"
   auto_start_machines = true
-  min_machines_running = 1
+  min_machines_running = 0
 
   [http_service.concurrency]
     type = "connections"

@@ -113,10 +113,12 @@ Files in the repo:
 | File | What it does |
 |---|---|
 | `Dockerfile`, `docker-entrypoint.sh` | Production image (Node 22, runs as a non-root user) |
-| `fly.toml` | Fly.io settings: Singapore region, HTTPS, health check, one always-on machine, volume at `/data` |
+| `fly.toml` | Fly.io settings: Singapore region, HTTPS, health check, one machine that sleeps when idle and wakes on the next visit, volume at `/data` |
 | `.github/workflows/fly-deploy.yml` | Runs the tests, creates the app and volume on first run, then deploys |
 
 On Fly.io, QR links automatically use `https://<app>.fly.dev`. Set `PUBLIC_URL` if you add a custom domain. Keep the app on **one machine**: uploads in progress and direct-transfer rooms live in that machine's memory and volume.
+
+The machine **sleeps when nobody is using it** (it is suspended, so waking takes about a second) to keep costs low. Fly.io only suspends it when there are no open connections, so direct transfers and uploads in progress keep it awake. Expired files are cleaned up when it wakes.
 
 ## Configuration
 
