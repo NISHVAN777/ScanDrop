@@ -1,0 +1,52 @@
+name: Remove unused Fly.io volumes
+
+# Manual only: Actions tab > "Remove unused Fly.io volumes" > Run workflow.
+# Deletes volumes of this app that are NOT the one named in fly.toml and are
+# NOT attached to any machine. Deleting a volume is permanent.
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type DELETE to permanently remove unused volumes'
+        required: true
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Require confirmation
+        if: ${{ inputs.confirm != 'DELETE' }}
+        run: |
+          echo "::error::Nothing deleted. Type DELETE in the confirm box to proceed."
+          exit 1
+
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Read app and current volume from fly.toml
+        run: |
+          echo "APP=$(grep -E '^app *=' fly.toml | cut -d'"' -f2)" >> "$GITHUB_ENV"
+          echo "VOLUME=$(grep -A2 '^\[\[mounts\]\]' fly.toml | grep -E '^ *source *=' | cut -d'"' -f2)" >> "$GITHUB_ENV"
+
+      - name: Volumes before
+        run: flyctl volumes list --app "$APP"
+
+      - name: Delete unused volumes
+        run: |
+          [ -n "$VOLUME" ] || { echo "::error::Could not read the current volume name from fly.toml"; exit 1; }
+          flyctl volumes list --app "$APP" --json \
+            | jq -r --arg v "$VOLUME" '.[]
+                | select(.name != $v)
+                | select(((.attached_machine_id // .AttachedMachine // "") | tostring) == "" or ((.attached_machine_id // .AttachedMachine) == null))
+                | "\(.id) \(.name) \(.size_gb // .SizeGb // "?")GB"' \
+            | while read -r id name size; do
+                [ -z "$id" ] && continue
+                echo "Deleting unused volume $id ($name, $size)"
+                flyctl volumes destroy "$id" --app "$APP" --yes
+              done
+
+      - name: Volumes after
+        run: flyctl volumes list --app "$APP"
