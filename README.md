@@ -106,14 +106,14 @@ One-time setup:
 1. Create a Fly.io account at https://fly.io and add a payment card (needed even for small apps).
 2. In the Fly.io dashboard, open **Tokens** and create a token. An **org deploy token** for your personal organization works.
 3. In this GitHub repo, open **Settings > Secrets and variables > Actions**, add a new repository secret named `FLY_API_TOKEN`, and paste the token.
-4. Push to `main` (or run the workflow from the **Actions** tab). The first run creates the app and a 3 GB storage volume, then deploys.
+4. Push to `main` (or run the workflow from the **Actions** tab). The first run creates the app and a 1 GB storage volume, then deploys.
 
 Files in the repo:
 
 | File | What it does |
 |---|---|
 | `Dockerfile`, `docker-entrypoint.sh` | Production image (Node 22, runs as a non-root user) |
-| `fly.toml` | Fly.io settings: Singapore region, HTTPS, health check, one machine that sleeps when idle and wakes on the next visit, volume at `/data` |
+| `fly.toml` | Fly.io settings: Singapore region, HTTPS, health check, one 256 MB machine that sleeps when idle and wakes on the next visit, 1 GB volume at `/data` (500 MB per file) |
 | `.github/workflows/fly-deploy.yml` | Runs the tests, creates the app and volume on first run, then deploys |
 
 On Fly.io, QR links automatically use `https://<app>.fly.dev`. Set `PUBLIC_URL` if you add a custom domain. Keep the app on **one machine**: uploads in progress and direct-transfer rooms live in that machine's memory and volume.

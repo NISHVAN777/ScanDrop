@@ -13,12 +13,14 @@ kill_timeout = "10s"
   NODE_ENV = "production"
   PORT = "8080"
   STORAGE_DIR = "/data"
-  MAX_FILE_MB = "1024"          # largest single upload: 1 GB
-  MAX_STORAGE_GB = "2.5"        # keep total usage under the 3 GB volume
+  MAX_FILE_MB = "500"           # largest single upload: 500 MB
+  MAX_STORAGE_GB = "0.8"        # keep total usage under the 1 GB volume
+  # Keep Node's memory well inside the 256 MB machine (peak measured ~130 MB under load)
+  NODE_OPTIONS = "--max-old-space-size=160"
 
-# Uploaded files live on this persistent volume (created by the deploy workflow).
+# Uploaded files live on this persistent 1 GB volume (created by the deploy workflow).
 [[mounts]]
-  source = "scandrop_data"
+  source = "scandrop_files"
   destination = "/data"
 
 [http_service]
@@ -46,4 +48,4 @@ kill_timeout = "10s"
 
 [[vm]]
   size = "shared-cpu-1x"
-  memory = "512mb"
+  memory = "256mb"

@@ -45,6 +45,7 @@ jobs:
         run: |
           echo "APP=$(grep -E '^app *=' fly.toml | cut -d'"' -f2)" >> "$GITHUB_ENV"
           echo "REGION=$(grep -E '^primary_region *=' fly.toml | cut -d'"' -f2)" >> "$GITHUB_ENV"
+          echo "VOLUME=$(grep -A2 '^\[\[mounts\]\]' fly.toml | grep -E '^ *source *=' | cut -d'"' -f2)" >> "$GITHUB_ENV"
 
       - name: Create the app (first deploy only)
         env:
@@ -65,9 +66,22 @@ jobs:
 
       - name: Create the storage volume (first deploy only)
         run: |
-          if ! flyctl volumes list --app "$APP" --json | grep -q '"scandrop_data"'; then
-            flyctl volumes create scandrop_data --app "$APP" --region "$REGION" --size 3 --yes
+          if ! flyctl volumes list --app "$APP" --json | grep -q "\"$VOLUME\""; then
+            flyctl volumes create "$VOLUME" --app "$APP" --region "$REGION" --size 1 --yes
           fi
+
+      # A machine can't switch volumes in place. If fly.toml now names a different
+      # volume, remove machines still attached to the old one; the deploy below
+      # starts a fresh machine on the new volume. Volumes themselves are kept.
+      - name: Replace machines still using an old volume
+        run: |
+          flyctl machines list --app "$APP" --json \
+            | jq -r --arg v "$VOLUME" '.[] | select(((.config.mounts // []) | length) > 0 and (((.config.mounts // []) | map(.name) | index($v)) == null)) | .id' \
+            | while read -r id; do
+                [ -z "$id" ] && continue
+                echo "Replacing machine $id (attached to an old volume)"
+                flyctl machines destroy "$id" --app "$APP" --force
+              done
 
       - name: Deploy
         run: flyctl deploy --remote-only --ha=false
